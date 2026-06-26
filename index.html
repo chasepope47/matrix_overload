@@ -86,7 +86,7 @@ body {
   width: 100%;
   height: 100%;
   image-rendering: pixelated;
-  cursor: crosshair;
+  cursor: none;
   touch-action: none;
 }
 
@@ -541,13 +541,16 @@ onAuthStateChanged(fbAuth, user => {
 const CFG = {
   BASE_HP:            8,
   HP_SCALE:           1.12,
-  BASE_CLICK:         1,
+  BASE_TICK_DMG:      1,
+  TICK_DMG_SCALE:     1.14,
   BASE_AUTO:          0.5,
-  CLICK_SCALE:        1.14,
+  BASE_TICK_MS:        500,
+  MIN_TICK_MS:         60,
+  TICK_SPEED_SCALE:    0.90,
   AUTO_SCALE:         1.14,
   COST_SCALE:         1.15,
-  CLICK_RADIUS:       48,
-  AOE_RADIUS_STEP:    8,
+  SQUARE_HALF:        24,
+  SQUARE_RADIUS_STEP:  6,
   KILL_QUOTA:         12,
   ELITE_EVERY:        10,
   MAX_PARTICLES:      120,
@@ -561,9 +564,10 @@ const CFG = {
 };
 
 const UPGRADE_DEFS = [
-  { id: 'click_power', name: 'Click Force',  effect: '×1.14 per tier', baseCost: 10,   active: false },
+  { id: 'click_power', name: 'Turret Speed', effect: 'Faster damage tick/tier', baseCost: 10,   active: false },
+  { id: 'tick_damage', name: 'Impact Force', effect: '×1.14 dmg/tier', baseCost: 20,   active: false },
   { id: 'auto_tick',   name: 'Auto Drone',   effect: '×1.14 per tier', baseCost: 50,   active: false },
-  { id: 'aoe_radius',  name: 'Blast Zone',   effect: '+8px radius/tier',baseCost: 200,  active: false },
+  { id: 'aoe_radius',  name: 'Square Size',  effect: '+6px per tier', baseCost: 200,  active: false },
   { id: 'crit_chance', name: 'Critical Hit', effect: '+6% crit/tier (3× dmg)', baseCost: 500, active: false },
   { id: 'wave_burst',  name: 'Wave Burst',   effect: 'ACTIVE — clear 20%', baseCost: 1000, active: true },
   { id: 'resource_mul',name: 'Loot Boost',   effect: '×1.25 per tier', baseCost: 2000, active: false },
@@ -572,10 +576,12 @@ const UPGRADE_DEFS = [
 // ═══════════════════════════════════════════════════════════
 //  SCALING
 // ═══════════════════════════════════════════════════════════
-const enemyHp  = s   => CFG.BASE_HP    * Math.pow(CFG.HP_SCALE,    s - 1);
-const clickDmg = lvl => CFG.BASE_CLICK * Math.pow(CFG.CLICK_SCALE, lvl);
-const autoDps  = lvl => lvl === 0 ? 0 : CFG.BASE_AUTO * Math.pow(CFG.AUTO_SCALE, lvl - 1);
-const upgCost  = (def, lvl) => Math.floor(def.baseCost * Math.pow(CFG.COST_SCALE, lvl));
+const enemyHp      = s   => CFG.BASE_HP * Math.pow(CFG.HP_SCALE, s - 1);
+const tickIntervalMs = lvl => Math.max(CFG.MIN_TICK_MS, CFG.BASE_TICK_MS * Math.pow(CFG.TICK_SPEED_SCALE, lvl));
+const tickDmg       = lvl => CFG.BASE_TICK_DMG * Math.pow(CFG.TICK_DMG_SCALE, lvl);
+const squareHalf    = lvl => CFG.SQUARE_HALF + lvl * CFG.SQUARE_RADIUS_STEP;
+const autoDps       = lvl => lvl === 0 ? 0 : CFG.BASE_AUTO * Math.pow(CFG.AUTO_SCALE, lvl - 1);
+const upgCost       = (def, lvl) => Math.floor(def.baseCost * Math.pow(CFG.COST_SCALE, lvl));
 
 // ═══════════════════════════════════════════════════════════
 //  STATE
@@ -829,7 +835,7 @@ function bindAuthScreen() {
     catch (e) { errEl.textContent = friendlyAuthError(e); }
   });
   document.getElementById('auth-guest-btn').addEventListener('click', () => {
-    updateAuthScreen(null);
+    document.getElementById('auth-screen').classList.add('hidden');
   });
 }
 
@@ -1265,6 +1271,18 @@ function drawFlash() {
   flashAlpha = Math.max(0, flashAlpha - 0.022);
 }
 
+function drawCursorSquare() {
+  if (!cursor.active) return;
+  const half   = squareHalf(state.upgrades.aoe_radius || 0);
+  const bright = squareFlash > 0;
+  if (squareFlash > 0) squareFlash--;
+  ctx.save();
+  ctx.strokeStyle = bright ? '#ffffff' : '#00ffccaa';
+  ctx.lineWidth   = bright ? 3 : 1.5;
+  ctx.strokeRect(cursor.x - half, cursor.y - half, half * 2, half * 2);
+  ctx.restore();
+}
+
 // ═══════════════════════════════════════════════════════════
 //  HUD UPDATE
 // ═══════════════════════════════════════════════════════════
@@ -1292,6 +1310,7 @@ function refreshHUD(dt) {
   }
 
   refreshStats();
+  refreshUpgradeAffordability();
   refreshWaveBurstCooldown();
 }
 
@@ -1299,11 +1318,16 @@ function refreshHUD(dt) {
 //  DOCK PANELS
 // ═══════════════════════════════════════════════════════════
 function refreshStats() {
-  const clvl = state.upgrades.click_power || 0;
-  const alvl = state.upgrades.auto_tick   || 0;
-  const crPct = ((state.upgrades.crit_chance || 0) * 6).toFixed(0);
+  const speedLvl = state.upgrades.click_power || 0;
+  const dmgLvl   = state.upgrades.tick_damage || 0;
+  const alvl     = state.upgrades.auto_tick   || 0;
+  const crPct    = ((state.upgrades.crit_chance || 0) * 6).toFixed(0);
+  const ticksSec = (1000 / tickIntervalMs(speedLvl)).toFixed(1);
+  const squarePx = squareHalf(state.upgrades.aoe_radius || 0) * 2;
   document.getElementById('panel-stats').innerHTML = `
-    <div class="stat-item"><span class="stat-label">Click DMG</span><span class="stat-value">${fmt(clickDmg(clvl))}</span></div>
+    <div class="stat-item"><span class="stat-label">Tick DMG</span><span class="stat-value">${fmt(tickDmg(dmgLvl))}</span></div>
+    <div class="stat-item"><span class="stat-label">Tick Rate</span><span class="stat-value">${ticksSec}/s</span></div>
+    <div class="stat-item"><span class="stat-label">Square</span><span class="stat-value">${squarePx}px</span></div>
     <div class="stat-item"><span class="stat-label">Auto DPS</span><span class="stat-value">${fmt(autoDps(alvl))}</span></div>
     <div class="stat-item"><span class="stat-label">Crit</span><span class="stat-value">${crPct}%</span></div>
     <div class="stat-item"><span class="stat-label">Resources</span><span class="stat-value">${fmt(Math.floor(state.resources))}</span></div>
@@ -1354,6 +1378,18 @@ function buildUpgradePanel() {
   }
 }
 
+function refreshUpgradeAffordability() {
+  const panel = document.getElementById('panel-upgrades');
+  if (!panel || panel.style.display === 'none') return;
+  for (const def of UPGRADE_DEFS) {
+    if (def.active) continue;
+    const card = document.getElementById(`upg-${def.id}`);
+    if (!card) continue;
+    const cost = upgCost(def, state.upgrades[def.id] || 0);
+    card.classList.toggle('disabled', state.resources < cost);
+  }
+}
+
 function refreshWaveBurstCooldown() {
   const bar = document.getElementById('cd-bar');
   if (!bar) return;
@@ -1398,30 +1434,65 @@ document.getElementById('dock-tabs').addEventListener('click', e => {
 });
 
 // ═══════════════════════════════════════════════════════════
-//  CLICK / TOUCH
+//  HOVER TURRET — a square follows the cursor/finger and ticks
+//  damage into anything inside it. Speed and size are upgrades.
 // ═══════════════════════════════════════════════════════════
-function handleClick(clientX, clientY) {
-  ensureAudio();
+const cursor = { x: 0, y: 0, active: false };
+let turretAccum  = 0;
+let squareFlash  = 0;
+
+function canvasPoint(clientX, clientY) {
   const rect = canvas.getBoundingClientRect();
-  const ex   = (clientX - rect.left)  * (W / rect.width);
-  const ey   = (clientY - rect.top)   * (H / rect.height);
-  const rad  = CFG.CLICK_RADIUS + (state.upgrades.aoe_radius || 0) * CFG.AOE_RADIUS_STEP;
-  const rad2 = rad * rad;
-  const dmg  = clickDmg(state.upgrades.click_power || 0);
-  let hit = false;
-  for (const e of pool) {
-    if (!e.alive) continue;
-    const dx = e.x - ex, dy = e.y - ey;
-    if (dx*dx + dy*dy <= rad2) { applyDmg(e, dmg); hit = true; }
-  }
-  if (!hit) floatText(ex, ey, 'miss', '#333');
+  return {
+    x: (clientX - rect.left) * (W / rect.width),
+    y: (clientY - rect.top)  * (H / rect.height),
+  };
 }
 
-canvas.addEventListener('mousedown', e => { if (e.button === 0) handleClick(e.clientX, e.clientY); });
+function updateCursor(clientX, clientY) {
+  ensureAudio();
+  const p = canvasPoint(clientX, clientY);
+  cursor.x = p.x; cursor.y = p.y; cursor.active = true;
+}
+
+function deactivateCursor() {
+  cursor.active = false;
+  turretAccum = 0;
+}
+
+canvas.addEventListener('mousemove',  e => updateCursor(e.clientX, e.clientY));
+canvas.addEventListener('mouseleave', deactivateCursor);
 canvas.addEventListener('touchstart', e => {
   e.preventDefault();
-  for (const t of e.changedTouches) handleClick(t.clientX, t.clientY);
+  const t = e.changedTouches[0];
+  if (t) updateCursor(t.clientX, t.clientY);
 }, { passive: false });
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  const t = e.changedTouches[0];
+  if (t) updateCursor(t.clientX, t.clientY);
+}, { passive: false });
+canvas.addEventListener('touchend',    deactivateCursor);
+canvas.addEventListener('touchcancel', deactivateCursor);
+
+function turretDamage() {
+  const half = squareHalf(state.upgrades.aoe_radius || 0);
+  const dmg  = tickDmg(state.upgrades.tick_damage || 0);
+  for (const e of pool) {
+    if (!e.alive) continue;
+    if (Math.abs(e.x - cursor.x) <= half && Math.abs(e.y - cursor.y) <= half) applyDmg(e, dmg);
+  }
+  squareFlash = 4;
+}
+
+function tickTurret(dt) {
+  if (!cursor.active) return;
+  turretAccum += dt;
+  const interval = tickIntervalMs(state.upgrades.click_power || 0);
+  if (turretAccum < interval) return;
+  turretAccum -= interval;
+  turretDamage();
+}
 
 // ═══════════════════════════════════════════════════════════
 //  OFFLINE CALCULATOR
@@ -1460,11 +1531,13 @@ function fmt(n) {
 //  60-STAGE BALANCE TABLE (sanity check on boot)
 // ═══════════════════════════════════════════════════════════
 console.table(Array.from({ length: 60 }, (_, i) => {
-  const s   = i + 1;
-  const lvl = state.upgrades.click_power || 0;
-  const hp  = enemyHp(s);
-  const cd  = clickDmg(lvl);
-  return { stage: s, enemyHP: hp.toFixed(1), clickDmg: cd.toFixed(2), clipsToKill: Math.ceil(hp/cd) };
+  const s        = i + 1;
+  const lvl      = state.upgrades.click_power || 0;
+  const dlvl     = state.upgrades.tick_damage || 0;
+  const hp       = enemyHp(s);
+  const interval = tickIntervalMs(lvl);
+  const dmg      = tickDmg(dlvl);
+  return { stage: s, enemyHP: hp.toFixed(1), tickIntervalMs: interval.toFixed(0), ticksToKill: Math.ceil(hp / dmg) };
 }));
 
 // ═══════════════════════════════════════════════════════════
@@ -1481,6 +1554,7 @@ function loop(ts) {
   updateParticles();
   updateFloaters();
   tickAuto(dt);
+  tickTurret(dt);
 
   // --- Render ---
   ctx.save();
@@ -1494,6 +1568,7 @@ function loop(ts) {
   drawEntities();
   drawParticles();
   drawFloaters();
+  drawCursorSquare();
   drawFlash();
   ctx.restore();
 

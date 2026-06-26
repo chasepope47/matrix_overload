@@ -6,7 +6,7 @@ A browser-based, offline-capable horde clicker game. No server, no dependencies 
 
 ## How to Play
 
-- **Click / tap** enemies on the canvas to deal damage. Your click hits all enemies within the blast radius.
+- A square **follows your cursor (or finger)** over the canvas and automatically ticks damage into any enemy inside it — no clicking required, just hover over the fight.
 - Kill **12 common enemies** per stage to spawn the boss. Kill the boss to advance.
 - **Elites** spawn every 10 common kills as mid-stage threats.
 - Earn resources per kill and spend them in the **Upgrades** tab.
@@ -15,7 +15,7 @@ A browser-based, offline-capable horde clicker game. No server, no dependencies 
 
 | Input | Action |
 |-------|--------|
-| Click / tap canvas | AoE damage in radius |
+| Move mouse / drag finger over canvas | Square follows and ticks damage into anything inside it |
 | Upgrades tab → buy card | Spend resources on a permanent upgrade |
 | Wave Burst card (orange) | Active ability — clears 20% of enemies; 15 s cooldown |
 
@@ -23,9 +23,10 @@ A browser-based, offline-capable horde clicker game. No server, no dependencies 
 
 | Upgrade | Effect |
 |---------|--------|
-| Click Force | Multiplies click damage x1.14 per tier |
+| Turret Speed | Faster damage ticks per tier (shorter interval between hits) |
+| Impact Force | Multiplies damage per tick x1.14 per tier |
 | Auto Drone | Passive DPS, x1.14 per tier (also earns while offline) |
-| Blast Zone | +8 px AoE radius per tier |
+| Square Size | +6 px per tier to the hover square's side length |
 | Critical Hit | +6% crit chance per tier (crits deal 3x damage) |
 | Wave Burst | Active ability — buy once to unlock, then press to use |
 | Loot Boost | Resources per kill x1.25 per tier |
