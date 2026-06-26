@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Matrix Overload</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #0d0d0f;
+  color: #e0e0e0;
+  font-family: 'Courier New', Courier, monospace;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ── HUD ───────────────────────────────────────────────── */
+#hud {
+  height: 54px;
+  background: #0a0a10;
+  border-bottom: 1px solid #1a1a2e;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  gap: 18px;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.hud-stage {
+  font-size: 13px;
+  color: #fff;
+  font-weight: bold;
+  white-space: nowrap;
+  min-width: 74px;
+}
+
+.hud-boss-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 140px;
+}
+.hud-bar-label { font-size: 9px; color: #444; text-transform: uppercase; letter-spacing: 0.08em; }
+.hud-bar-outer { height: 7px; background: #1a1a1a; border-radius: 3px; overflow: hidden; }
+.hud-bar-inner { height: 100%; border-radius: 3px; transition: width 0.15s; }
+#boss-bar-inner { background: linear-gradient(90deg, #aa1100, #ff4400); }
+
+.hud-kills {
+  font-size: 12px;
+  color: #888;
+  white-space: nowrap;
+}
+
+.hud-spacer { flex: 1; }
+
+.hud-dps {
+  font-size: 12px;
+  color: #ffaa00;
+  white-space: nowrap;
+}
+
+.hud-resources {
+  font-size: 14px;
+  color: #ffcc44;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+/* ── Canvas ────────────────────────────────────────────── */
+#canvas-wrapper {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
+#game-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+/* ── Dock ──────────────────────────────────────────────── */
+#dock {
+  height: 138px;
+  background: #0a0a10;
+  border-top: 1px solid #1a1a2e;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+#dock-tabs {
+  display: flex;
+  border-bottom: 1px solid #1a1a2e;
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  padding: 5px 14px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #555;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tab-btn:hover { color: #00ffcc; }
+.tab-btn.active { color: #00ffcc; border-bottom-color: #00ffcc; }
+
+#dock-content {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 8px 12px;
+}
+
+/* ── Stats Panel ───────────────────────────────────────── */
+#panel-stats {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+  height: 100%;
+  white-space: nowrap;
+}
+.stat-item { display: flex; flex-direction: column; gap: 1px; }
+.stat-label { font-size: 9px; color: #444; text-transform: uppercase; letter-spacing: 0.07em; }
+.stat-value { font-size: 15px; color: #00ffcc; font-weight: bold; }
+
+/* ── Upgrades Panel ────────────────────────────────────── */
+#panel-upgrades {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  height: 100%;
+  white-space: nowrap;
+}
+
+.upg-card {
+  background: #12121e;
+  border: 1px solid #242440;
+  border-radius: 5px;
+  padding: 6px 10px;
+  min-width: 96px;
+  max-width: 110px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  position: relative;
+  flex-shrink: 0;
+}
+.upg-card:hover:not(.disabled):not(.on-cooldown) {
+  border-color: #00ffcc;
+  background: #18183a;
+}
+.upg-card.disabled { opacity: 0.38; cursor: not-allowed; }
+.upg-card.is-active  { border-color: #ff9900; }
+.upg-card.is-active:hover:not(.disabled):not(.on-cooldown) { border-color: #ffcc00; background: #1a1508; }
+.upg-card.on-cooldown { opacity: 0.55; cursor: not-allowed; }
+
+.upg-name   { font-size: 10px; color: #ccc; font-weight: bold; }
+.upg-effect { font-size: 9px;  color: #555; margin: 2px 0 3px; line-height: 1.3; white-space: normal; }
+.upg-level  { font-size: 9px;  color: #00ffcc; }
+.upg-cost   { font-size: 10px; color: #ffaa00; margin-top: 2px; }
+
+.cd-bar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  background: #ff9900;
+  border-radius: 0 0 4px 4px;
+  transition: width 0.1s linear;
+}
+
+/* ── Offline Panel ─────────────────────────────────────── */
+#panel-offline {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 11px;
+  color: #666;
+  height: 100%;
+  justify-content: center;
+}
+.offline-row { display: flex; gap: 8px; align-items: center; }
+.ol-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #00ff88; box-shadow: 0 0 6px #00ff88;
+  flex-shrink: 0;
+}
+
+/* ── Offline Modal ─────────────────────────────────────── */
+#offline-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.78);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+#offline-modal.show { display: flex; }
+.modal-box {
+  background: #0e0e18;
+  border: 1px solid #00ffcc;
+  border-radius: 8px;
+  padding: 26px 34px;
+  text-align: center;
+  max-width: 340px;
+}
+.modal-title  { font-size: 17px; color: #00ffcc; margin-bottom: 10px; letter-spacing: 0.05em; }
+.modal-body   { font-size: 13px; color: #888; margin-bottom: 6px; line-height: 1.7; }
+.modal-earned { font-size: 26px; color: #ffcc44; font-weight: bold; margin: 8px 0 18px; }
+.modal-btn {
+  background: transparent;
+  border: 1px solid #00ffcc;
+  color: #00ffcc;
+  padding: 8px 26px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.modal-btn:hover { background: #00ffcc22; }
+
+::-webkit-scrollbar { height: 4px; width: 4px; }
+::-webkit-scrollbar-track { background: #111; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-stage">STAGE <span id="hud-stage-num">1</span></div>
+
+  <div class="hud-boss-wrap" id="hud-boss-wrap" style="display:none">
+    <div class="hud-bar-label">Boss HP</div>
+    <div class="hud-bar-outer" style="width:140px">
+      <div class="hud-bar-inner" id="boss-bar-inner" style="width:100%"></div>
+    </div>
+  </div>
+
+  <div class="hud-kills" id="hud-kills">Kills: 0 / 12</div>
+
+  <div class="hud-spacer"></div>
+  <div class="hud-dps"       id="hud-dps">Auto: 0/s</div>
+  <div class="hud-resources" id="hud-resources">⬡ 0</div>
+</div>
+
+<!-- Canvas -->
+<div id="canvas-wrapper">
+  <canvas id="game-canvas"></canvas>
+</div>
+
+<!-- Dock -->
+<div id="dock">
+  <div id="dock-tabs">
+    <button class="tab-btn active" data-tab="stats">Stats</button>
+    <button class="tab-btn"        data-tab="upgrades">Upgrades</button>
+    <button class="tab-btn"        data-tab="offline">Cache</button>
+  </div>
+  <div id="dock-content">
+    <div id="panel-stats"></div>
+    <div id="panel-upgrades" style="display:none"></div>
+    <div id="panel-offline"  style="display:none"></div>
+  </div>
+</div>
+
+<!-- Offline Modal -->
+<div id="offline-modal">
+  <div class="modal-box">
+    <div class="modal-title">WELCOME BACK</div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-earned" id="modal-earned"></div>
+    <button class="modal-btn" id="modal-close-btn">Collect</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════════════════════
+const CFG = {
+  BASE_HP:            8,
+  HP_SCALE:           1.12,
+  BASE_CLICK:         1,
+  BASE_AUTO:          0.5,
+  CLICK_SCALE:        1.14,
+  AUTO_SCALE:         1.14,
+  COST_SCALE:         1.15,
+  CLICK_RADIUS:       48,
+  AOE_RADIUS_STEP:    8,
+  KILL_QUOTA:         12,
+  ELITE_EVERY:        10,
+  MAX_PARTICLES:      120,
+  MAX_FLOATERS:       30,
+  MAX_OFFLINE_SEC:    43200,
+  SAVE_INTERVAL_MS:   10000,
+  SPAWN_INTERVAL_MS:  700,
+  TARGET_DENSITY:     55,
+  POOL_SIZE:          150,
+  WAVE_BURST_CD_MS:   15000,
+};
+
+const UPGRADE_DEFS = [
+  { id: 'click_power', name: 'Click Force',  effect: '×1.14 per tier', baseCost: 10,   active: false },
+  { id: 'auto_tick',   name: 'Auto Drone',   effect: '×1.14 per tier', baseCost: 50,   active: false },
+  { id: 'aoe_radius',  name: 'Blast Zone',   effect: '+8px radius/tier',baseCost: 200,  active: false },
+  { id: 'crit_chance', name: 'Critical Hit', effect: '+6% crit/tier (3× dmg)', baseCost: 500, active: false },
+  { id: 'wave_burst',  name: 'Wave Burst',   effect: 'ACTIVE — clear 20%', baseCost: 1000, active: true },
+  { id: 'resource_mul',name: 'Loot Boost',   effect: '×1.25 per tier', baseCost: 2000, active: false },
+];
+
+// ═══════════════════════════════════════════════════════════
+//  SCALING
+// ═══════════════════════════════════════════════════════════
+const enemyHp  = s   => CFG.BASE_HP    * Math.pow(CFG.HP_SCALE,    s - 1);
+const clickDmg = lvl => CFG.BASE_CLICK * Math.pow(CFG.CLICK_SCALE, lvl);
+const autoDps  = lvl => lvl === 0 ? 0 : CFG.BASE_AUTO * Math.pow(CFG.AUTO_SCALE, lvl - 1);
+const upgCost  = (def, lvl) => Math.floor(def.baseCost * Math.pow(CFG.COST_SCALE, lvl));
+
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+const DEFAULT_STATE = {
+  stage:       1,
+  resources:   0,
+  upgrades:    {},
+  prestigeMul: 1,   // reserved — not used yet
+  lastSaved:   Date.now(),
+};
+
+let state = (() => {
+  try {
+    const s = JSON.parse(localStorage.getItem('matrix_save'));
+    if (s) return Object.assign({}, DEFAULT_STATE, s, { upgrades: Object.assign({}, s.upgrades) });
+  } catch (_) {}
+  return Object.assign({}, DEFAULT_STATE, { upgrades: {} });
+})();
+
+function saveState() {
+  state.lastSaved = Date.now();
+  try { localStorage.setItem('matrix_save', JSON.stringify(state)); } catch (_) {}
+}
+window.addEventListener('beforeunload', saveState);
+setInterval(saveState, CFG.SAVE_INTERVAL_MS);
+
+// ═══════════════════════════════════════════════════════════
+//  CANVAS
+// ═══════════════════════════════════════════════════════════
+const canvas = document.getElementById('game-canvas');
+const ctx    = canvas.getContext('2d');
+let W = 0, H = 0;
+
+function resizeCanvas() {
+  const wrap = document.getElementById('canvas-wrapper');
+  W = canvas.width  = wrap.clientWidth;
+  H = canvas.height = wrap.clientHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// ═══════════════════════════════════════════════════════════
+//  ENTITY POOL
+// ═══════════════════════════════════════════════════════════
+const pool = [];
+for (let i = 0; i < CFG.POOL_SIZE; i++) pool.push({ alive: false });
+
+// Stage tracking
+let stageKills     = 0;   // common kills this stage
+let eliteCountdown = CFG.ELITE_EVERY;
+let bossAlive      = false;
+let bossRef        = null;
+
+function getFreeSlot() {
+  for (const e of pool) if (!e.alive) return e;
+  const e = { alive: false };
+  pool.push(e);
+  return e;
+}
+
+function spawnEnemy(type) {
+  const e      = getFreeSlot();
+  const hp     = enemyHp(state.stage) * (type === 'boss' ? 12 : type === 'elite' ? 4 : 1);
+  const margin = 40;
+  const side   = Math.floor(Math.random() * 4);
+  let x, y;
+  if      (side === 0) { x = Math.random() * W;        y = -margin; }
+  else if (side === 1) { x = W + margin;               y = Math.random() * H; }
+  else if (side === 2) { x = Math.random() * W;        y = H + margin; }
+  else                 { x = -margin;                  y = Math.random() * H; }
+
+  Object.assign(e, {
+    alive: true, type,
+    x, y,
+    vx: (Math.random() - 0.5) * 0.4,
+    vy: (Math.random() - 0.5) * 0.4,
+    hp, maxHp: hp,
+    flash: 0,
+    pulseT: Math.random() * Math.PI * 2,
+    rot: Math.random() * Math.PI * 2,
+  });
+
+  if (type === 'boss') { bossAlive = true; bossRef = e; }
+  return e;
+}
+
+function liveCount() {
+  let n = 0;
+  for (const e of pool) if (e.alive) n++;
+  return n;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  AUDIO
+// ═══════════════════════════════════════════════════════════
+let audioCtx = null;
+
+function ensureAudio() {
+  if (audioCtx) return;
+  try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) {}
+}
+
+function beep(freq, dur, vol = 0.1, type = 'square') {
+  if (!audioCtx) return;
+  try {
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type;
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(vol, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + dur);
+  } catch (_) {}
+}
+
+const sfx = {
+  hit()  { beep(520, 0.05, 0.07); },
+  kill() { beep(200, 0.1,  0.1); },
+  crit() { beep(880, 0.07, 0.14); },
+  boss() { beep(110, 0.35, 0.16, 'sawtooth'); setTimeout(() => beep(165, 0.25, 0.12, 'sawtooth'), 140); },
+  burst(){ beep(330, 0.2,  0.12, 'sawtooth'); },
+};
+
+// ═══════════════════════════════════════════════════════════
+//  PARTICLES
+// ═══════════════════════════════════════════════════════════
+const particles = [];
+
+function burst(x, y, color, n = 6) {
+  for (let i = 0; i < n; i++) {
+    if (particles.length >= CFG.MAX_PARTICLES) break;
+    const a = (Math.PI * 2 * i / n) + Math.random() * 0.8;
+    const s = 1.5 + Math.random() * 3;
+    particles.push({ x, y, vx: Math.cos(a)*s, vy: Math.sin(a)*s - 1,
+                     size: 2 + Math.random()*3, color, life: 1 });
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  FLOATERS
+// ═══════════════════════════════════════════════════════════
+const floaters = [];
+
+function floatText(x, y, text, color, big = false) {
+  if (floaters.length >= CFG.MAX_FLOATERS) floaters.shift();
+  floaters.push({ x, y, text, color, op: 1, big });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SCREEN EFFECTS
+// ═══════════════════════════════════════════════════════════
+let shakeFrames = 0, shakeMag = 0;
+let flashAlpha = 0, flashCol = '#fff';
+
+function triggerShake(frames, mag) { shakeFrames = frames; shakeMag = mag; }
+function triggerFlash(alpha, col)  { flashAlpha = alpha;  flashCol = col; }
+
+// ═══════════════════════════════════════════════════════════
+//  DAMAGE & KILLS
+// ═══════════════════════════════════════════════════════════
+function resPerkill(type) {
+  const base = type === 'boss' ? 15 : type === 'elite' ? 4 : 1;
+  return Math.floor((state.stage * 1.2 + base) * Math.pow(1.25, state.upgrades.resource_mul || 0));
+}
+
+function applyDmg(e, dmg) {
+  const critLvl  = state.upgrades.crit_chance || 0;
+  const isCrit   = Math.random() < critLvl * 0.06;
+  const actual   = isCrit ? dmg * 3 : dmg;
+
+  e.hp   -= actual;
+  e.flash = 3;
+
+  if (isCrit) {
+    floatText(e.x + (Math.random()-0.5)*18, e.y - 12, `CRIT ${fmt(Math.ceil(actual))}`, '#ffff44', true);
+    triggerFlash(0.10, '#ffff00');
+    sfx.crit();
+  } else {
+    floatText(e.x + (Math.random()-0.5)*14, e.y - 10, fmt(Math.ceil(actual)), '#00ffcc');
+    sfx.hit();
+  }
+
+  if (e.hp <= 0) killEnemy(e);
+}
+
+function killEnemy(e) {
+  const type  = e.type;
+  const gain  = resPerkill(type);
+  state.resources += gain;
+  floatText(e.x, e.y - 22, `+${fmt(gain)}`, '#ffcc44');
+  burst(e.x, e.y, type === 'boss' ? '#ff4400' : type === 'elite' ? '#ff00cc' : '#00ffcc');
+  sfx.kill();
+  e.alive = false;
+
+  if (type === 'boss') {
+    bossAlive = false; bossRef = null;
+    triggerShake(20, 6);
+    triggerFlash(0.4, '#ff4400');
+    sfx.boss();
+    state.stage++;
+    stageKills = 0;
+    eliteCountdown = CFG.ELITE_EVERY;
+    document.getElementById('hud-boss-wrap').style.display = 'none';
+  } else {
+    stageKills++;
+    eliteCountdown--;
+    if (eliteCountdown <= 0) {
+      eliteCountdown = CFG.ELITE_EVERY;
+      spawnEnemy('elite');
+    }
+    if (stageKills >= CFG.KILL_QUOTA && !bossAlive) {
+      // Clear remaining non-boss enemies and spawn boss
+      for (const en of pool) { if (en.alive && en.type !== 'boss') en.alive = false; }
+      spawnEnemy('boss');
+      document.getElementById('hud-boss-wrap').style.display = '';
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  WAVE BURST (ACTIVE ABILITY)
+// ═══════════════════════════════════════════════════════════
+let wbCooldownEnd = 0;
+
+function fireWaveBurst() {
+  if (!(state.upgrades.wave_burst > 0)) return;
+  if (Date.now() < wbCooldownEnd) return;
+  wbCooldownEnd = Date.now() + CFG.WAVE_BURST_CD_MS;
+
+  const alive = pool.filter(e => e.alive && e.type !== 'boss');
+  const n     = Math.max(1, Math.ceil(alive.length * 0.2));
+  // Shuffle and take n
+  for (let i = alive.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i+1));
+    [alive[i], alive[j]] = [alive[j], alive[i]];
+  }
+  for (let i = 0; i < n && i < alive.length; i++) killEnemy(alive[i]);
+
+  triggerFlash(0.22, '#ff9900');
+  sfx.burst();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SPAWNER
+// ═══════════════════════════════════════════════════════════
+let spawnAccum = 0;
+
+function maybeSpawn(dt) {
+  if (bossAlive) return;
+  spawnAccum += dt;
+  if (spawnAccum < CFG.SPAWN_INTERVAL_MS) return;
+  spawnAccum -= CFG.SPAWN_INTERVAL_MS;
+  const live = liveCount();
+  if (live < CFG.TARGET_DENSITY) {
+    const batch = Math.min(4, CFG.TARGET_DENSITY - live);
+    for (let i = 0; i < batch; i++) spawnEnemy('common');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  UPDATE
+// ═══════════════════════════════════════════════════════════
+function updateEntities(dt) {
+  const dt16 = dt / 16;
+  const cx = W * 0.5, cy = H * 0.5;
+  for (const e of pool) {
+    if (!e.alive) continue;
+    const dx   = cx - e.x, dy = cy - e.y;
+    const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+    const spd  = e.type === 'boss' ? 0.28 : e.type === 'elite' ? 0.48 : 0.44;
+    e.vx += (dx/dist)*0.025 + (Math.random()-0.5)*0.05;
+    e.vy += (dy/dist)*0.025 + (Math.random()-0.5)*0.05;
+    const v = Math.sqrt(e.vx*e.vx + e.vy*e.vy);
+    if (v > spd) { e.vx = e.vx/v*spd; e.vy = e.vy/v*spd; }
+    e.x += e.vx * dt16;
+    e.y += e.vy * dt16;
+    if (e.flash  > 0) e.flash--;
+    e.pulseT += 0.07;
+    e.rot    += e.type === 'boss' ? 0.009 : 0.018;
+  }
+}
+
+function updateParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy; p.vy += 0.06;
+    p.life -= 0.04;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+
+function updateFloaters() {
+  for (let i = floaters.length - 1; i >= 0; i--) {
+    const f = floaters[i];
+    f.y  -= 1.3;
+    f.op -= 0.03;
+    if (f.op <= 0) floaters.splice(i, 1);
+  }
+}
+
+let autoAccum = 0;
+function tickAuto(dt) {
+  autoAccum += dt;
+  if (autoAccum < 1000) return;
+  autoAccum -= 1000;
+  const dps = autoDps(state.upgrades.auto_tick || 0);
+  if (dps <= 0) return;
+  const live = pool.filter(e => e.alive && e.type !== 'boss');
+  if (!live.length) return;
+  const per = dps / live.length;
+  for (const e of live) {
+    e.hp -= per;
+    if (e.hp <= 0) killEnemy(e);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DRAW
+// ═══════════════════════════════════════════════════════════
+function drawBg() {
+  ctx.strokeStyle = '#ffffff07';
+  ctx.lineWidth = 1;
+  const step = 44;
+  for (let x = 0; x <= W; x += step) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = 0; y <= H; y += step) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+}
+
+function drawCommon(e) {
+  const r = 12 * (1 + Math.sin(e.pulseT) * 0.05);
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI*2);
+  ctx.fillStyle = e.flash > 0 ? '#fff' : '#bb2244';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(0, 0, r * 0.52, 0, Math.PI*2);
+  ctx.fillStyle = e.flash > 0 ? '#fff' : '#ff4488';
+  ctx.fill();
+  // HP bar
+  const bw = r * 2;
+  ctx.fillStyle = '#111';
+  ctx.fillRect(-r, r + 3, bw, 3);
+  ctx.fillStyle = `hsl(${(e.hp/e.maxHp)*110},100%,50%)`;
+  ctx.fillRect(-r, r + 3, bw * (e.hp/e.maxHp), 3);
+}
+
+function drawElite(e) {
+  const r     = 18 * (1 + Math.sin(e.pulseT) * 0.09);
+  const sides = 8;
+  ctx.rotate(e.rot);
+  ctx.beginPath();
+  for (let i = 0; i < sides; i++) {
+    const a = (Math.PI * 2 * i / sides) - Math.PI/sides;
+    i === 0 ? ctx.moveTo(r*Math.cos(a), r*Math.sin(a))
+            : ctx.lineTo(r*Math.cos(a), r*Math.sin(a));
+  }
+  ctx.closePath();
+  ctx.fillStyle   = e.flash > 0 ? '#fff' : '#aa00dd';
+  ctx.strokeStyle = e.flash > 0 ? '#fff' : '#ee44ff';
+  ctx.lineWidth   = 2;
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath(); ctx.arc(0, 0, r*0.38, 0, Math.PI*2);
+  ctx.fillStyle = e.flash > 0 ? '#fff' : '#ff99ff';
+  ctx.fill();
+  // HP bar (un-rotated)
+  ctx.rotate(-e.rot);
+  const bw = r * 2;
+  ctx.fillStyle = '#111';
+  ctx.fillRect(-r, r+3, bw, 3);
+  ctx.fillStyle = `hsl(${(e.hp/e.maxHp)*110},100%,50%)`;
+  ctx.fillRect(-r, r+3, bw*(e.hp/e.maxHp), 3);
+}
+
+function drawBoss(e) {
+  const r = 32;
+  ctx.rotate(e.rot);
+  // outer hex
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const a = Math.PI * 2 * i / 6;
+    i === 0 ? ctx.moveTo(r*Math.cos(a), r*Math.sin(a))
+            : ctx.lineTo(r*Math.cos(a), r*Math.sin(a));
+  }
+  ctx.closePath();
+  ctx.fillStyle   = e.flash > 0 ? '#fff' : '#3a0800';
+  ctx.strokeStyle = e.flash > 0 ? '#fff' : '#ff4400';
+  ctx.lineWidth   = 3;
+  ctx.fill(); ctx.stroke();
+  // counter-rotating core
+  ctx.rotate(-e.rot * 3);
+  ctx.beginPath(); ctx.arc(0, 0, r*0.48, 0, Math.PI*2);
+  ctx.fillStyle = e.flash > 0 ? '#fff' : '#ff2200';
+  ctx.fill();
+  ctx.beginPath(); ctx.arc(0, 0, r*0.22, 0, Math.PI*2);
+  ctx.fillStyle = e.flash > 0 ? '#fff' : '#ff9966';
+  ctx.fill();
+  // HP bar (un-rotated)
+  ctx.rotate(e.rot * 3);
+  ctx.rotate(-e.rot);
+  const bw = r * 2;
+  ctx.fillStyle = '#111';
+  ctx.fillRect(-r, r+4, bw, 4);
+  ctx.fillStyle = `hsl(${(e.hp/e.maxHp)*60},100%,50%)`;
+  ctx.fillRect(-r, r+4, bw*(e.hp/e.maxHp), 4);
+}
+
+function drawEntities() {
+  for (const e of pool) {
+    if (!e.alive) continue;
+    ctx.save();
+    ctx.translate(Math.round(e.x), Math.round(e.y));
+    if (e.type === 'common') drawCommon(e);
+    else if (e.type === 'elite') drawElite(e);
+    else drawBoss(e);
+    ctx.restore();
+  }
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    ctx.save();
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - p.size*0.5, p.y - p.size*0.5, p.size, p.size);
+    ctx.restore();
+  }
+}
+
+function drawFloaters() {
+  for (const f of floaters) {
+    ctx.save();
+    ctx.globalAlpha = f.op;
+    ctx.font        = f.big ? 'bold 17px Courier New' : 'bold 12px Courier New';
+    ctx.fillStyle   = f.color;
+    ctx.shadowColor = f.color;
+    ctx.shadowBlur  = f.big ? 10 : 5;
+    ctx.fillText(f.text, f.x, f.y);
+    ctx.restore();
+  }
+}
+
+function drawFlash() {
+  if (flashAlpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = flashAlpha;
+  ctx.fillStyle   = flashCol;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+  flashAlpha = Math.max(0, flashAlpha - 0.022);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  HUD UPDATE
+// ═══════════════════════════════════════════════════════════
+let hudAccum = 0;
+function refreshHUD(dt) {
+  hudAccum += dt;
+  if (hudAccum < 180) return;
+  hudAccum = 0;
+
+  document.getElementById('hud-stage-num').textContent = state.stage;
+  document.getElementById('hud-resources').textContent = `⬡ ${fmt(Math.floor(state.resources))}`;
+  document.getElementById('hud-dps').textContent = `Auto: ${fmt(autoDps(state.upgrades.auto_tick||0))}/s`;
+
+  const kilEl = document.getElementById('hud-kills');
+  if (bossAlive) {
+    kilEl.textContent = '!! BOSS !!';
+    kilEl.style.color = '#ff4400';
+    if (bossRef) {
+      const pct = Math.max(0, bossRef.hp / bossRef.maxHp * 100);
+      document.getElementById('boss-bar-inner').style.width = `${pct.toFixed(1)}%`;
+    }
+  } else {
+    kilEl.textContent = `Kills: ${stageKills} / ${CFG.KILL_QUOTA}`;
+    kilEl.style.color = '';
+  }
+
+  refreshStats();
+  refreshWaveBurstCooldown();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DOCK PANELS
+// ═══════════════════════════════════════════════════════════
+function refreshStats() {
+  const clvl = state.upgrades.click_power || 0;
+  const alvl = state.upgrades.auto_tick   || 0;
+  const crPct = ((state.upgrades.crit_chance || 0) * 6).toFixed(0);
+  document.getElementById('panel-stats').innerHTML = `
+    <div class="stat-item"><span class="stat-label">Click DMG</span><span class="stat-value">${fmt(clickDmg(clvl))}</span></div>
+    <div class="stat-item"><span class="stat-label">Auto DPS</span><span class="stat-value">${fmt(autoDps(alvl))}</span></div>
+    <div class="stat-item"><span class="stat-label">Crit</span><span class="stat-value">${crPct}%</span></div>
+    <div class="stat-item"><span class="stat-label">Resources</span><span class="stat-value">${fmt(Math.floor(state.resources))}</span></div>
+    <div class="stat-item"><span class="stat-label">Enemies</span><span class="stat-value">${liveCount()}</span></div>
+    <div class="stat-item"><span class="stat-label">Stage</span><span class="stat-value">${state.stage}</span></div>
+  `;
+}
+
+function buildUpgradePanel() {
+  const panel = document.getElementById('panel-upgrades');
+  panel.innerHTML = '';
+  for (const def of UPGRADE_DEFS) {
+    const lvl      = state.upgrades[def.id] || 0;
+    const cost     = upgCost(def, lvl);
+    const canAfford = state.resources >= cost || def.active;
+    const isActive  = def.active;
+    const onCD      = isActive && Date.now() < wbCooldownEnd;
+    const notBought = isActive && !lvl;
+
+    const card = document.createElement('div');
+    card.className = 'upg-card'
+      + (isActive  ? ' is-active'   : '')
+      + (onCD      ? ' on-cooldown' : '')
+      + (!canAfford && !isActive ? ' disabled' : '')
+      + (notBought ? ' disabled'  : '');
+    card.id = `upg-${def.id}`;
+
+    card.innerHTML = `
+      <div class="upg-name">${def.name}</div>
+      <div class="upg-effect">${def.effect}</div>
+      <div class="upg-level">Lv ${lvl}</div>
+      <div class="upg-cost">${isActive ? (lvl ? 'Ready' : `⬡ ${fmt(cost)}`) : `⬡ ${fmt(cost)}`}</div>
+      ${isActive && lvl ? '<div class="cd-bar" id="cd-bar" style="width:0%"></div>' : ''}
+    `;
+
+    card.addEventListener('click', () => {
+      ensureAudio();
+      if (isActive) { fireWaveBurst(); return; }
+      const l = state.upgrades[def.id] || 0;
+      const c = upgCost(def, l);
+      if (state.resources < c) return;
+      state.resources -= c;
+      state.upgrades[def.id] = l + 1;
+      buildUpgradePanel();
+    });
+
+    panel.appendChild(card);
+  }
+}
+
+function refreshWaveBurstCooldown() {
+  const bar = document.getElementById('cd-bar');
+  if (!bar) return;
+  const rem = wbCooldownEnd - Date.now();
+  if (rem <= 0) {
+    bar.style.width = '0%';
+    const card = document.getElementById('upg-wave_burst');
+    if (card) { card.classList.remove('on-cooldown'); card.querySelector('.upg-cost').textContent = 'Ready'; }
+  } else {
+    bar.style.width = `${(rem / CFG.WAVE_BURST_CD_MS * 100).toFixed(1)}%`;
+    const card = document.getElementById('upg-wave_burst');
+    if (card) card.classList.add('on-cooldown');
+  }
+}
+
+function buildOfflinePanel() {
+  const dps  = autoDps(state.upgrades.auto_tick || 0);
+  const ts   = new Date(state.lastSaved).toLocaleTimeString();
+  document.getElementById('panel-offline').innerHTML = `
+    <div class="offline-row"><div class="ol-dot"></div><span>Save active — syncs every 10s &amp; on exit</span></div>
+    <div class="offline-row"><span>Last save: ${ts}</span></div>
+    <div class="offline-row"><span>Offline DPS: ${fmt(dps)}/s &nbsp;|&nbsp; Cap: 12 hours</span></div>
+    <div class="offline-row"><span>Prestige slot: reserved (not yet active)</span></div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TAB SWITCHING
+// ═══════════════════════════════════════════════════════════
+const TAB_IDS = ['stats', 'upgrades', 'offline'];
+document.getElementById('dock-tabs').addEventListener('click', e => {
+  const btn = e.target.closest('.tab-btn');
+  if (!btn) return;
+  const tab = btn.dataset.tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  TAB_IDS.forEach(id => {
+    document.getElementById(`panel-${id}`).style.display = id === tab ? '' : 'none';
+  });
+  if (tab === 'upgrades') buildUpgradePanel();
+  if (tab === 'offline')  buildOfflinePanel();
+});
+
+// ═══════════════════════════════════════════════════════════
+//  CLICK / TOUCH
+// ═══════════════════════════════════════════════════════════
+function handleClick(clientX, clientY) {
+  ensureAudio();
+  const rect = canvas.getBoundingClientRect();
+  const ex   = (clientX - rect.left)  * (W / rect.width);
+  const ey   = (clientY - rect.top)   * (H / rect.height);
+  const rad  = CFG.CLICK_RADIUS + (state.upgrades.aoe_radius || 0) * CFG.AOE_RADIUS_STEP;
+  const rad2 = rad * rad;
+  const dmg  = clickDmg(state.upgrades.click_power || 0);
+  let hit = false;
+  for (const e of pool) {
+    if (!e.alive) continue;
+    const dx = e.x - ex, dy = e.y - ey;
+    if (dx*dx + dy*dy <= rad2) { applyDmg(e, dmg); hit = true; }
+  }
+  if (!hit) floatText(ex, ey, 'miss', '#333');
+}
+
+canvas.addEventListener('mousedown', e => { if (e.button === 0) handleClick(e.clientX, e.clientY); });
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  for (const t of e.changedTouches) handleClick(t.clientX, t.clientY);
+}, { passive: false });
+
+// ═══════════════════════════════════════════════════════════
+//  OFFLINE CALCULATOR
+// ═══════════════════════════════════════════════════════════
+function calcOffline() {
+  const elapsed = Math.min((Date.now() - state.lastSaved) / 1000, CFG.MAX_OFFLINE_SEC);
+  const lvl     = state.upgrades.auto_tick || 0;
+  if (lvl === 0 || elapsed < 10) return;
+  const earned = Math.floor(autoDps(lvl) * elapsed);
+  if (earned <= 0) return;
+  state.resources += earned;
+  const h = Math.floor(elapsed / 3600), m = Math.floor((elapsed % 3600) / 60);
+  const timeStr = h > 0 ? `${h}h ${m}m` : `${m}m`;
+  document.getElementById('modal-body').textContent   = `You were away for ${timeStr}. The drones kept working...`;
+  document.getElementById('modal-earned').textContent = `+ ${fmt(earned)} resources`;
+  document.getElementById('offline-modal').classList.add('show');
+}
+document.getElementById('modal-close-btn').addEventListener('click', () => {
+  document.getElementById('offline-modal').classList.remove('show');
+});
+
+// ═══════════════════════════════════════════════════════════
+//  NUMBER FORMAT
+// ═══════════════════════════════════════════════════════════
+function fmt(n) {
+  n = +n;
+  if (n >= 1e12) return (n/1e12).toFixed(2) + 'T';
+  if (n >= 1e9)  return (n/1e9).toFixed(2)  + 'B';
+  if (n >= 1e6)  return (n/1e6).toFixed(2)  + 'M';
+  if (n >= 1e3)  return (n/1e3).toFixed(1)  + 'K';
+  if (n < 10 && n !== Math.floor(n)) return n.toFixed(2);
+  return Math.floor(n).toString();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  60-STAGE BALANCE TABLE (sanity check on boot)
+// ═══════════════════════════════════════════════════════════
+console.table(Array.from({ length: 60 }, (_, i) => {
+  const s   = i + 1;
+  const lvl = state.upgrades.click_power || 0;
+  const hp  = enemyHp(s);
+  const cd  = clickDmg(lvl);
+  return { stage: s, enemyHP: hp.toFixed(1), clickDmg: cd.toFixed(2), clipsToKill: Math.ceil(hp/cd) };
+}));
+
+// ═══════════════════════════════════════════════════════════
+//  MAIN LOOP
+// ═══════════════════════════════════════════════════════════
+let lastTs = 0;
+
+function loop(ts) {
+  const dt = Math.min(ts - lastTs, 100);
+  lastTs   = ts;
+
+  maybeSpawn(dt);
+  updateEntities(dt);
+  updateParticles();
+  updateFloaters();
+  tickAuto(dt);
+
+  // --- Render ---
+  ctx.save();
+  if (shakeFrames > 0) {
+    ctx.translate((Math.random()-0.5)*shakeMag*2, (Math.random()-0.5)*shakeMag*2);
+    shakeFrames--;
+    if (shakeFrames === 0) shakeMag = 0;
+  }
+  ctx.clearRect(-10, -10, W+20, H+20);
+  drawBg();
+  drawEntities();
+  drawParticles();
+  drawFloaters();
+  drawFlash();
+  ctx.restore();
+
+  refreshHUD(dt);
+  requestAnimationFrame(loop);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════════════════════
+calcOffline();
+refreshStats();
+buildUpgradePanel();
+buildOfflinePanel();
+
+// Seed initial enemies
+for (let i = 0; i < 22; i++) spawnEnemy('common');
+
+requestAnimationFrame(ts => { lastTs = ts; loop(ts); });
+</script>
+</body>
+</html>
