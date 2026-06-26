@@ -416,7 +416,15 @@ import './firebase-auth.js';
 'use strict';
 
 // ═══════════════════════════════════════════════════════════
-//  CONFIG
+//  SECTION MAP
+//  Issue #1 – Character Development  → SCALING, DAMAGE & KILLS, WAVE BURST, CLICK/TOUCH, UPGRADES
+//  Issue #2 – Enemy Development      → ENTITY POOL, AUDIO, SPAWNER, UPDATE, DRAW (common/elite)
+//  Issue #3 – Boss Development       → BOSS CHARACTERS, BOSS PHASES, BOSS ATTACKS, BOSS LOOT
+//  Issue #4 – Game UI & Performance  → CONFIG, STATE, CANVAS, HUD, DOCK PANELS, AUTH, OFFLINE
+// ═══════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════
+//  CONFIG  [Issue #4 – Game UI & Performance]
 // ═══════════════════════════════════════════════════════════
 const CFG = {
   BASE_HP:            8,
@@ -437,7 +445,9 @@ const CFG = {
   SPAWN_INTERVAL_MS:  700,
   TARGET_DENSITY:     55,
   POOL_SIZE:          150,
-  WAVE_BURST_CD_MS:   15000,
+  WAVE_BURST_CD_MS:       15000,
+  BOSS_MINION_INTERVAL_MS: 8000,   // [Issue #3] how often boss spawns minions
+  BOSS_PHASE2_HP_PCT:      0.50,   // [Issue #3] HP threshold that triggers phase 2
 };
 
 const UPGRADE_DEFS = [
@@ -450,7 +460,7 @@ const UPGRADE_DEFS = [
 ];
 
 // ═══════════════════════════════════════════════════════════
-//  SCALING
+//  SCALING  [Issue #1 – Character Development]
 // ═══════════════════════════════════════════════════════════
 const enemyHp  = s   => CFG.BASE_HP    * Math.pow(CFG.HP_SCALE,    s - 1);
 const clickDmg = lvl => CFG.BASE_CLICK * Math.pow(CFG.CLICK_SCALE, lvl);
@@ -458,7 +468,7 @@ const autoDps  = lvl => lvl === 0 ? 0 : CFG.BASE_AUTO * Math.pow(CFG.AUTO_SCALE,
 const upgCost  = (def, lvl) => Math.floor(def.baseCost * Math.pow(CFG.COST_SCALE, lvl));
 
 // ═══════════════════════════════════════════════════════════
-//  STATE
+//  STATE  [Issue #4 – Game UI & Performance]
 // ═══════════════════════════════════════════════════════════
 const DEFAULT_STATE = {
   stage:       1,
@@ -488,7 +498,7 @@ window.addEventListener('beforeunload', saveState);
 setInterval(saveState, CFG.SAVE_INTERVAL_MS);
 
 // ═══════════════════════════════════════════════════════════
-//  ACCOUNT / CLOUD SYNC
+//  ACCOUNT / CLOUD SYNC  [Issue #4 – Game UI & Performance]
 // ═══════════════════════════════════════════════════════════
 function friendlyAuthError(e) {
   const code = (e && e.code) || '';
@@ -716,7 +726,7 @@ function bindAuthScreen() {
 bindAuthScreen();
 
 // ═══════════════════════════════════════════════════════════
-//  CANVAS
+//  CANVAS  [Issue #4 – Game UI & Performance]
 // ═══════════════════════════════════════════════════════════
 const canvas = document.getElementById('game-canvas');
 const ctx    = canvas.getContext('2d');
@@ -731,16 +741,17 @@ window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
 // ═══════════════════════════════════════════════════════════
-//  ENTITY POOL
+//  ENTITY POOL  [Issue #2 – Enemy Development]
 // ═══════════════════════════════════════════════════════════
 const pool = [];
 for (let i = 0; i < CFG.POOL_SIZE; i++) pool.push({ alive: false });
 
 // Stage tracking
-let stageKills     = 0;   // common kills this stage
-let eliteCountdown = CFG.ELITE_EVERY;
-let bossAlive      = false;
-let bossRef        = null;
+let stageKills      = 0;   // common kills this stage
+let eliteCountdown  = CFG.ELITE_EVERY;
+let bossAlive       = false;
+let bossRef         = null;
+let bossSpawnAccum  = 0;   // [Issue #3] timer for boss minion spawning
 
 function getFreeSlot() {
   for (const e of pool) if (!e.alive) return e;
@@ -749,13 +760,30 @@ function getFreeSlot() {
   return e;
 }
 
+// ═══════════════════════════════════════════════════════════
+//  BOSS CHARACTERS  [Issue #3 – Boss Development]
+//  Covers: shape, size, color, phase reactions, loot, attacks
+// ═══════════════════════════════════════════════════════════
+
+// Each entry: name, shape (hex/oct/cross/diamond/star),
+//   colors [bg, primary, highlight], glow, lootMul (bonus loot multiplier)
+const BOSS_STYLES = [
+  { name: 'Rupture Core',       shape: 'hex',     colors: ['#3a0800','#ff4400','#ff9966'], glow: '#ff7744', lootMul: 1.0 },
+  { name: 'Vortex Brute',       shape: 'oct',     colors: ['#0b1630','#00b7ff','#8ce6ff'], glow: '#5ad7ff', lootMul: 1.2 },
+  { name: 'Crucible Sentinel',  shape: 'cross',   colors: ['#261100','#ffaa00','#ffe08a'], glow: '#ffcc55', lootMul: 1.4 },
+  { name: 'Nova Warden',        shape: 'diamond', colors: ['#180824','#b13cff','#f3b6ff'], glow: '#d97bff', lootMul: 1.6 },
+  { name: 'Apex Harbinger',     shape: 'star',    colors: ['#09120c','#00ff99','#99ffdd'], glow: '#4effc1', lootMul: 1.8 },
+  { name: 'Void Fracture',      shape: 'hex',     colors: ['#0a0014','#ff00ff','#ff99ff'], glow: '#ff55ff', lootMul: 2.0 },
+  { name: 'Crimson Annihilator',shape: 'oct',     colors: ['#1a0000','#ff0022','#ff8899'], glow: '#ff2244', lootMul: 2.2 },
+  { name: 'Stellar Colossus',   shape: 'star',    colors: ['#000818','#44aaff','#aaddff'], glow: '#66ccff', lootMul: 2.5 },
+  { name: 'Abyssal Dread',      shape: 'diamond', colors: ['#060606','#aaaaaa','#eeeeee'], glow: '#cccccc', lootMul: 2.8 },
+  { name: 'Omega Breach',       shape: 'cross',   colors: ['#0f0000','#ff6600','#ffcc99'], glow: '#ff8833', lootMul: 3.2 },
+];
+
 function getBossStyle(stage) {
-  const s = Math.max(1, stage || 1);
-  if (s === 1) return { name: 'Rupture Core', shape: 'hex', colors: ['#3a0800', '#ff4400', '#ff9966'], glow: '#ff7744' };
-  if (s === 2) return { name: 'Vortex Brute', shape: 'oct', colors: ['#0b1630', '#00b7ff', '#8ce6ff'], glow: '#5ad7ff' };
-  if (s === 3) return { name: 'Crucible Sentinel', shape: 'cross', colors: ['#261100', '#ffaa00', '#ffe08a'], glow: '#ffcc55' };
-  if (s === 4) return { name: 'Nova Warden', shape: 'diamond', colors: ['#180824', '#b13cff', '#f3b6ff'], glow: '#d97bff' };
-  return { name: 'Apex Harbinger', shape: 'star', colors: ['#09120c', '#00ff99', '#99ffdd'], glow: '#4effc1' };
+  const s   = Math.max(1, stage || 1);
+  const idx = Math.min(s - 1, BOSS_STYLES.length - 1);
+  return BOSS_STYLES[idx];
 }
 
 function spawnEnemy(type) {
@@ -781,7 +809,8 @@ function spawnEnemy(type) {
     pulseT: Math.random() * Math.PI * 2,
     rot: Math.random() * Math.PI * 2,
     bossStyle,
-    bossName: bossStyle ? bossStyle.name : '',
+    bossName:  bossStyle ? bossStyle.name : '',
+    bossPhase: type === 'boss' ? 1 : 0,   // [Issue #3] 1=normal, 2=enraged
   });
 
   if (type === 'boss') { bossAlive = true; bossRef = e; }
@@ -795,7 +824,7 @@ function liveCount() {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  AUDIO
+//  AUDIO  [Issue #2 – Enemy Development]
 // ═══════════════════════════════════════════════════════════
 let audioCtx = null;
 
@@ -819,11 +848,13 @@ function beep(freq, dur, vol = 0.1, type = 'square') {
 }
 
 const sfx = {
-  hit()  { beep(520, 0.05, 0.07); },
-  kill() { beep(200, 0.1,  0.1); },
-  crit() { beep(880, 0.07, 0.14); },
-  boss() { beep(110, 0.35, 0.16, 'sawtooth'); setTimeout(() => beep(165, 0.25, 0.12, 'sawtooth'), 140); },
-  burst(){ beep(330, 0.2,  0.12, 'sawtooth'); },
+  hit()    { beep(520, 0.05, 0.07); },
+  kill()   { beep(200, 0.1,  0.1); },
+  crit()   { beep(880, 0.07, 0.14); },
+  boss()   { beep(110, 0.35, 0.16, 'sawtooth'); setTimeout(() => beep(165, 0.25, 0.12, 'sawtooth'), 140); },
+  burst()  { beep(330, 0.2,  0.12, 'sawtooth'); },
+  // [Issue #3] boss enters phase 2 – low rumble sweep
+  enrage() { beep(80, 0.5, 0.18, 'sawtooth'); setTimeout(() => beep(55, 0.4, 0.14, 'sawtooth'), 220); },
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -861,20 +892,23 @@ function triggerShake(frames, mag) { shakeFrames = frames; shakeMag = mag; }
 function triggerFlash(alpha, col)  { flashAlpha = alpha;  flashCol = col; }
 
 // ═══════════════════════════════════════════════════════════
-//  DAMAGE & KILLS
+//  DAMAGE & KILLS  [Issue #1 – Character Development]
 // ═══════════════════════════════════════════════════════════
-function resPerkill(type) {
-  const base = type === 'boss' ? 15 : type === 'elite' ? 4 : 1;
-  return Math.floor((state.stage * 1.2 + base) * Math.pow(1.25, state.upgrades.resource_mul || 0));
+
+// [Issue #3] loot: boss loot scaled by style.lootMul so later bosses pay more
+function resPerkill(type, entity) {
+  const base    = type === 'boss' ? 15 : type === 'elite' ? 4 : 1;
+  const styleMul = (type === 'boss' && entity?.bossStyle?.lootMul) ? entity.bossStyle.lootMul : 1;
+  return Math.floor((state.stage * 1.2 + base) * Math.pow(1.25, state.upgrades.resource_mul || 0) * styleMul);
 }
 
 function applyDmg(e, dmg) {
-  const critLvl  = state.upgrades.crit_chance || 0;
-  const isCrit   = Math.random() < critLvl * 0.06;
-  const actual   = isCrit ? dmg * 3 : dmg;
+  const critLvl = state.upgrades.crit_chance || 0;
+  const isCrit  = Math.random() < critLvl * 0.06;
+  const actual  = isCrit ? dmg * 3 : dmg;
 
-  e.hp   -= actual;
-  e.flash = 3;
+  e.hp    -= actual;
+  e.flash  = 3;
 
   if (isCrit) {
     floatText(e.x + (Math.random()-0.5)*18, e.y - 12, `CRIT ${fmt(Math.ceil(actual))}`, '#ffff44', true);
@@ -885,12 +919,23 @@ function applyDmg(e, dmg) {
     sfx.hit();
   }
 
+  // [Issue #3] Boss phase 2 — enrage at BOSS_PHASE2_HP_PCT
+  if (e.type === 'boss' && e.bossPhase === 1 && e.hp / e.maxHp <= CFG.BOSS_PHASE2_HP_PCT) {
+    e.bossPhase = 2;
+    triggerShake(14, 7);
+    triggerFlash(0.45, e.bossStyle?.colors?.[1] || '#ff4400');
+    floatText(e.x, e.y - 46, 'ENRAGED!', '#ff2200', true);
+    sfx.enrage();
+    // Phase 2 immediately floods the arena with minions
+    for (let i = 0; i < 5; i++) spawnEnemy('common');
+  }
+
   if (e.hp <= 0) killEnemy(e);
 }
 
 function killEnemy(e) {
   const type  = e.type;
-  const gain  = resPerkill(type);
+  const gain  = resPerkill(type, e);
   state.resources += gain;
   floatText(e.x, e.y - 22, `+${fmt(gain)}`, '#ffcc44');
   burst(e.x, e.y, type === 'boss' ? '#ff4400' : type === 'elite' ? '#ff00cc' : '#00ffcc');
@@ -898,7 +943,7 @@ function killEnemy(e) {
   e.alive = false;
 
   if (type === 'boss') {
-    bossAlive = false; bossRef = null;
+    bossAlive = false; bossRef = null; bossSpawnAccum = 0;
     triggerShake(20, 6);
     triggerFlash(0.4, '#ff4400');
     sfx.boss();
@@ -923,7 +968,7 @@ function killEnemy(e) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  WAVE BURST (ACTIVE ABILITY)
+//  WAVE BURST (ACTIVE ABILITY)  [Issue #1 – Character Development]
 // ═══════════════════════════════════════════════════════════
 let wbCooldownEnd = 0;
 
@@ -946,7 +991,7 @@ function fireWaveBurst() {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  SPAWNER
+//  SPAWNER  [Issue #2 – Enemy Development]
 // ═══════════════════════════════════════════════════════════
 let spawnAccum = 0;
 
@@ -962,8 +1007,18 @@ function maybeSpawn(dt) {
   }
 }
 
+// [Issue #3] Boss periodically spawns minions — more in phase 2
+function tickBossMinions(dt) {
+  if (!bossAlive) { bossSpawnAccum = 0; return; }
+  bossSpawnAccum += dt;
+  if (bossSpawnAccum < CFG.BOSS_MINION_INTERVAL_MS) return;
+  bossSpawnAccum -= CFG.BOSS_MINION_INTERVAL_MS;
+  const count = bossRef?.bossPhase === 2 ? 4 : 2;
+  for (let i = 0; i < count; i++) spawnEnemy('common');
+}
+
 // ═══════════════════════════════════════════════════════════
-//  UPDATE
+//  UPDATE  [Issue #2 – Enemy Development]
 // ═══════════════════════════════════════════════════════════
 function updateEntities(dt) {
   const dt16 = dt / 16;
@@ -972,7 +1027,8 @@ function updateEntities(dt) {
     if (!e.alive) continue;
     const dx   = cx - e.x, dy = cy - e.y;
     const dist = Math.sqrt(dx*dx + dy*dy) || 1;
-    const spd  = e.type === 'boss' ? 0.28 : e.type === 'elite' ? 0.48 : 0.44;
+    // [Issue #3] phase 2 boss moves faster and more aggressively
+    const spd  = e.type === 'boss' ? (e.bossPhase === 2 ? 0.46 : 0.28) : e.type === 'elite' ? 0.48 : 0.44;
     e.vx += (dx/dist)*0.025 + (Math.random()-0.5)*0.05;
     e.vy += (dy/dist)*0.025 + (Math.random()-0.5)*0.05;
     const v = Math.sqrt(e.vx*e.vx + e.vy*e.vy);
@@ -1020,7 +1076,7 @@ function tickAuto(dt) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  DRAW
+//  DRAW  [Issue #2 – Enemy Development | Issue #3 – Boss Development]
 // ═══════════════════════════════════════════════════════════
 function drawBg() {
   ctx.strokeStyle = '#ffffff07';
@@ -1150,11 +1206,35 @@ function drawBoss(e) {
 
   ctx.rotate(e.rot * 3);
   ctx.rotate(-e.rot);
+
+  // [Issue #3] phase 2 outer glow ring
+  if (e.bossPhase === 2) {
+    ctx.beginPath();
+    ctx.arc(0, 0, r + 6 + Math.sin(e.pulseT * 2) * 3, 0, Math.PI * 2);
+    ctx.strokeStyle = '#ff2200';
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.55 + Math.sin(e.pulseT * 3) * 0.2;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  // HP bar
   const bw = r * 2;
   ctx.fillStyle = '#111';
   ctx.fillRect(-r, r + 4, bw, 4);
   ctx.fillStyle = `hsl(${(e.hp/e.maxHp)*60},100%,50%)`;
   ctx.fillRect(-r, r + 4, bw * (e.hp/e.maxHp), 4);
+
+  // [Issue #3] boss name drawn on canvas
+  const nameLabel = style.name + (e.bossPhase === 2 ? ' ★' : '');
+  ctx.font = 'bold 10px Courier New';
+  ctx.textAlign = 'center';
+  ctx.shadowColor = e.bossPhase === 2 ? '#ff2200' : (style.glow || '#ff4400');
+  ctx.shadowBlur = 10;
+  ctx.fillStyle  = e.bossPhase === 2 ? '#ff4422' : (style.glow || '#ff4400');
+  ctx.fillText(nameLabel, 0, -(r + 10));
+  ctx.textAlign = 'left';
+  ctx.shadowBlur = 0;
 }
 
 function drawEntities() {
@@ -1203,7 +1283,7 @@ function drawFlash() {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  HUD UPDATE
+//  HUD UPDATE  [Issue #4 – Game UI & Performance]
 // ═══════════════════════════════════════════════════════════
 let hudAccum = 0;
 function refreshHUD(dt) {
@@ -1235,7 +1315,7 @@ function refreshHUD(dt) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  DOCK PANELS
+//  DOCK PANELS  [Issue #4 – Game UI & Performance]
 // ═══════════════════════════════════════════════════════════
 function refreshStats() {
   const clvl = state.upgrades.click_power || 0;
@@ -1320,7 +1400,7 @@ function buildOfflinePanel() {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  TAB SWITCHING
+//  TAB SWITCHING  [Issue #4 – Game UI & Performance]
 // ═══════════════════════════════════════════════════════════
 const TAB_IDS = ['stats', 'upgrades', 'offline', 'account'];
 document.getElementById('dock-tabs').addEventListener('click', e => {
@@ -1337,7 +1417,7 @@ document.getElementById('dock-tabs').addEventListener('click', e => {
 });
 
 // ═══════════════════════════════════════════════════════════
-//  CLICK / TOUCH
+//  CLICK / TOUCH  [Issue #1 – Character Development]
 // ═══════════════════════════════════════════════════════════
 function handleClick(clientX, clientY) {
   ensureAudio();
@@ -1363,7 +1443,7 @@ canvas.addEventListener('touchstart', e => {
 }, { passive: false });
 
 // ═══════════════════════════════════════════════════════════
-//  OFFLINE CALCULATOR
+//  OFFLINE CALCULATOR  [Issue #4 – Game UI & Performance]
 // ═══════════════════════════════════════════════════════════
 function calcOffline() {
   const elapsed = Math.min((Date.now() - state.lastSaved) / 1000, CFG.MAX_OFFLINE_SEC);
@@ -1416,6 +1496,7 @@ function loop(ts) {
   lastTs   = ts;
 
   maybeSpawn(dt);
+  tickBossMinions(dt);   // [Issue #3] boss minion waves
   updateEntities(dt);
   updateParticles();
   updateFloaters();
