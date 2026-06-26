@@ -242,6 +242,33 @@ body {
 ::-webkit-scrollbar-track { background: #111; }
 ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
 
+/* ── Auth Screen ─────────────────────────────────────── */
+#auth-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(4, 5, 12, 0.94);
+  padding: 20px;
+}
+#auth-screen.hidden { display: none; }
+.auth-card {
+  width: min(420px, 100%);
+  background: #0e0e18;
+  border: 1px solid #00ffcc;
+  border-radius: 10px;
+  padding: 22px 22px 18px;
+  box-shadow: 0 0 30px rgba(0,255,204,0.12);
+}
+.auth-title { font-size: 24px; color: #00ffcc; margin-bottom: 8px; letter-spacing: 0.06em; }
+.auth-copy { color: #888; font-size: 12px; line-height: 1.7; margin-bottom: 12px; }
+.auth-form { flex-direction: column; align-items: stretch; gap: 8px; }
+.auth-form input { width: 100%; }
+.auth-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.auth-hint { color: #666; font-size: 11px; margin-top: 8px; }
+
 /* ── Account Panel ─────────────────────────────────────── */
 #panel-account {
   display: flex;
@@ -251,11 +278,13 @@ body {
   justify-content: center;
   font-size: 12px;
 }
-.acct-row { display: flex; gap: 10px; align-items: center; }
+.acct-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .acct-label { font-size: 9px; color: #444; text-transform: uppercase; letter-spacing: 0.07em; }
 .acct-value { color: #00ffcc; font-weight: bold; }
 .acct-form { display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; }
-.acct-form input {
+.acct-form input,
+.acct-input,
+.acct-textarea {
   background: #12121e;
   border: 1px solid #242440;
   border-radius: 4px;
@@ -263,14 +292,71 @@ body {
   font-family: inherit;
   font-size: 12px;
   padding: 6px 8px;
-  width: 150px;
 }
-.acct-form input:focus { outline: none; border-color: #00ffcc; }
-.acct-btn-row { display: flex; gap: 6px; }
+.acct-form input { width: 150px; }
+.acct-input { width: 180px; }
+.acct-textarea {
+  width: min(360px, 100%);
+  min-height: 58px;
+  resize: vertical;
+}
+.acct-form input:focus,
+.acct-input:focus,
+.acct-textarea:focus { outline: none; border-color: #00ffcc; }
+.acct-btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
 .acct-error { color: #ff6666; font-size: 11px; max-width: 220px; }
+.acct-check-row { display: flex; gap: 8px; align-items: center; color: #ccc; }
+.community-section { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.community-list { display: flex; flex-direction: column; gap: 6px; max-width: 420px; }
+.profile-card {
+  background: #12121e;
+  border: 1px solid #242440;
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+.profile-name { color: #00ffcc; font-weight: bold; }
+.profile-meta { color: #888; font-size: 10px; margin-top: 2px; }
+.profile-bio { color: #ccc; font-size: 11px; margin-top: 4px; }
+.profile-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 5px; }
+.profile-tag {
+  font-size: 9px;
+  color: #ffcc44;
+  background: #1f1f2e;
+  border: 1px solid #33334a;
+  border-radius: 999px;
+  padding: 2px 6px;
+}
+.profile-empty { color: #666; font-size: 11px; }
+.party-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
+.party-pill {
+  color: #ffcc44;
+  border: 1px solid #3a2f00;
+  background: #1a1408;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+}
 </style>
 </head>
 <body>
+
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-title">MATRIX OVERLOAD</div>
+    <div class="auth-copy">Sign in to save your progress, build a profile, and join a party. You can also keep playing as a guest.</div>
+    <div class="acct-form auth-form">
+      <input type="email" id="auth-email" placeholder="email" autocomplete="email">
+      <input type="password" id="auth-password" placeholder="password" autocomplete="current-password">
+      <div class="auth-actions">
+        <button class="modal-btn" id="auth-signin-btn">Log In</button>
+        <button class="modal-btn" id="auth-signup-btn">Sign Up</button>
+        <button class="modal-btn" id="auth-guest-btn">Play as Guest</button>
+      </div>
+    </div>
+    <div class="acct-error" id="auth-error"></div>
+    <div class="auth-hint">Profiles and party codes appear in the Account tab after you sign in.</div>
+  </div>
+</div>
 
 <!-- HUD -->
 <div id="hud">
@@ -335,7 +421,7 @@ import {
   signOut, onAuthStateChanged,
 } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js';
 import {
-  getFirestore, doc, getDoc, setDoc,
+  getFirestore, doc, getDoc, setDoc, collection, getDocs,
 } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -371,6 +457,72 @@ window.MatrixCloud = {
     return getDoc(doc(fbDb, 'saves', this.user.uid))
       .then(snap => snap.exists() ? snap.data() : null)
       .catch(() => null);
+  },
+  saveProfile(profile) {
+    if (!this.user) return Promise.resolve();
+    return setDoc(doc(fbDb, 'profiles', this.user.uid), {
+      uid: this.user.uid,
+      email: this.user.email || '',
+      updatedAt: Date.now(),
+      ...profile,
+    }, { merge: true }).catch(() => {});
+  },
+  async getProfile(uid) {
+    if (!uid) return null;
+    try {
+      const snap = await getDoc(doc(fbDb, 'profiles', uid));
+      return snap.exists() ? snap.data() : null;
+    } catch (_) {
+      return null;
+    }
+  },
+  async listPublicProfiles() {
+    try {
+      const snap = await getDocs(collection(fbDb, 'profiles'));
+      return snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(p => p.publicProfile !== false)
+        .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+        .slice(0, 20);
+    } catch (_) {
+      return [];
+    }
+  },
+  async createParty() {
+    if (!this.user) return null;
+    const code = `MTR${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+    const party = {
+      code,
+      members: [{ uid: this.user.uid, email: this.user.email || '' }],
+      updatedAt: Date.now(),
+    };
+    await setDoc(doc(fbDb, 'parties', code), party, { merge: true });
+    await this.saveProfile({ partyCode: code });
+    return code;
+  },
+  async joinParty(code) {
+    if (!this.user || !code) return null;
+    const ref = doc(fbDb, 'parties', code);
+    try {
+      const snap = await getDoc(ref);
+      const existing = (snap.exists() ? snap.data().members : []) || [];
+      const filtered = existing.filter(member => member.uid !== this.user.uid);
+      filtered.push({ uid: this.user.uid, email: this.user.email || '' });
+      await setDoc(ref, { code, members: filtered, updatedAt: Date.now() }, { merge: true });
+      await this.saveProfile({ partyCode: code });
+      return code;
+    } catch (_) {
+      return null;
+    }
+  },
+  async getParty(code) {
+    if (!code) return null;
+    try {
+      const snap = await getDoc(doc(fbDb, 'parties', code));
+      return snap.exists() ? snap.data() : null;
+    } catch (_) {
+      return null;
+    }
   },
 };
 
@@ -447,7 +599,10 @@ let state = (() => {
 function saveState() {
   state.lastSaved = Date.now();
   try { localStorage.setItem('matrix_save', JSON.stringify(state)); } catch (_) {}
-  if (window.MatrixCloud.user) window.MatrixCloud.push(state);
+  if (window.MatrixCloud.user) {
+    window.MatrixCloud.push(state);
+    window.MatrixCloud.saveProfile({ build: summarizeBuildForProfile() });
+  }
 }
 window.addEventListener('beforeunload', saveState);
 setInterval(saveState, CFG.SAVE_INTERVAL_MS);
@@ -478,16 +633,147 @@ async function syncFromCloud() {
   }
 }
 
+function escapeHtml(str = '') {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function summarizeBuildForProfile() {
+  return {
+    stage: state.stage || 1,
+    resources: state.resources || 0,
+    prestigeMul: state.prestigeMul || 1,
+    upgrades: Object.fromEntries(
+      UPGRADE_DEFS.map(def => [def.id, state.upgrades?.[def.id] || 0]).filter(([, lvl]) => lvl > 0)
+    ),
+  };
+}
+
+async function renderCommunityProfiles() {
+  const listEl = document.getElementById('acct-community-list');
+  if (!listEl) return;
+  const profiles = await window.MatrixCloud.listPublicProfiles();
+  if (!profiles.length) {
+    listEl.innerHTML = '<div class="profile-empty">No public profiles yet. Save yours to appear here.</div>';
+    return;
+  }
+  listEl.innerHTML = profiles.map(profile => {
+    const build = profile.build || {};
+    const upgrades = Object.entries(build.upgrades || {})
+      .slice(0, 4)
+      .map(([id, lvl]) => `<span class="profile-tag">${escapeHtml(id.replace(/_/g, ' '))} ${lvl}</span>`)
+      .join('');
+    return `
+      <div class="profile-card">
+        <div class="profile-name">${escapeHtml(profile.displayName || profile.email || 'Builder')}</div>
+        <div class="profile-meta">Stage ${escapeHtml(build.stage || 1)} • ${escapeHtml(build.resources || 0)} resources</div>
+        <div class="profile-bio">${escapeHtml(profile.bio || 'No bio yet')}</div>
+        <div class="profile-tags">${upgrades || '<span class="profile-tag">Fresh recruit</span>'}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function renderPartyMembers(code) {
+  const partyEl = document.getElementById('acct-party-members');
+  if (!partyEl) return;
+  if (!code) {
+    partyEl.innerHTML = '<div class="profile-empty">Create or join a party to team up.</div>';
+    return;
+  }
+  const party = await window.MatrixCloud.getParty(code);
+  const members = party?.members || [];
+  if (!members.length) {
+    partyEl.innerHTML = '<div class="profile-empty">Your party is waiting for a teammate.</div>';
+    return;
+  }
+  partyEl.innerHTML = members.map(member => `<div class="profile-card"><div class="profile-name">${escapeHtml(member.email || 'Builder')}</div><div class="profile-meta">Party member</div></div>`).join('');
+}
+
 function buildAccountPanel() {
   const panel = document.getElementById('panel-account');
   const user  = window.MatrixCloud.user;
   if (user) {
     panel.innerHTML = `
-      <div class="acct-row"><span class="acct-label">Signed in as</span><span class="acct-value">${user.email}</span></div>
-      <div class="acct-row"><span style="color:#666">Progress syncs to the cloud automatically.</span></div>
-      <button class="modal-btn" id="acct-signout-btn">Sign Out</button>
+      <div class="acct-row"><span class="acct-label">Signed in as</span><span class="acct-value">${escapeHtml(user.email || 'player')}</span></div>
+      <div class="acct-row"><span style="color:#666">Progress syncs to the cloud automatically and your build shows up for other players.</span></div>
+      <label class="acct-label" for="acct-display-name">Display name</label>
+      <input class="acct-input" id="acct-display-name" maxlength="24" placeholder="Your alias">
+      <label class="acct-label" for="acct-bio">Bio</label>
+      <textarea class="acct-textarea" id="acct-bio" maxlength="140" placeholder="Tell the crew about your build"></textarea>
+      <label class="acct-check-row"><input type="checkbox" id="acct-public"> Show my profile publicly</label>
+      <div class="acct-btn-row">
+        <button class="modal-btn" id="acct-save-profile">Save Profile</button>
+        <button class="modal-btn" id="acct-signout-btn">Sign Out</button>
+      </div>
+      <div class="acct-error" id="acct-error"></div>
+      <div class="party-row">
+        <input class="acct-input" id="acct-party-code" maxlength="12" placeholder="Party code">
+        <button class="modal-btn" id="acct-create-party">Create Party</button>
+        <button class="modal-btn" id="acct-join-party">Join Party</button>
+      </div>
+      <div class="community-section">
+        <div class="acct-label">Current party</div>
+        <div id="acct-party-members"></div>
+      </div>
+      <div class="community-section">
+        <div class="acct-label">Community builds</div>
+        <div id="acct-community-list" class="community-list"></div>
+      </div>
     `;
+    const displayNameEl = document.getElementById('acct-display-name');
+    const bioEl         = document.getElementById('acct-bio');
+    const publicEl      = document.getElementById('acct-public');
+    const errEl         = document.getElementById('acct-error');
+    const partyCodeEl   = document.getElementById('acct-party-code');
+
+    window.MatrixCloud.getProfile(user.uid).then(profile => {
+      if (!profile) return;
+      displayNameEl.value = profile.displayName || '';
+      bioEl.value = profile.bio || '';
+      publicEl.checked = profile.publicProfile !== false;
+      partyCodeEl.value = profile.partyCode || '';
+      renderPartyMembers(profile.partyCode || '');
+    });
+
+    document.getElementById('acct-save-profile').addEventListener('click', async () => {
+      errEl.textContent = '';
+      try {
+        await window.MatrixCloud.saveProfile({
+          displayName: displayNameEl.value.trim(),
+          bio: bioEl.value.trim(),
+          publicProfile: publicEl.checked,
+          build: summarizeBuildForProfile(),
+        });
+        errEl.textContent = 'Profile saved.';
+        await renderCommunityProfiles();
+      } catch (e) {
+        errEl.textContent = 'Could not save your profile.';
+      }
+    });
+
     document.getElementById('acct-signout-btn').addEventListener('click', () => window.MatrixCloud.signOutUser());
+    document.getElementById('acct-create-party').addEventListener('click', async () => {
+      const code = await window.MatrixCloud.createParty();
+      if (code) {
+        partyCodeEl.value = code;
+        await renderPartyMembers(code);
+      }
+    });
+    document.getElementById('acct-join-party').addEventListener('click', async () => {
+      const code = partyCodeEl.value.trim().toUpperCase();
+      if (!code) return;
+      const joined = await window.MatrixCloud.joinParty(code);
+      if (joined) {
+        partyCodeEl.value = joined;
+        await renderPartyMembers(joined);
+      }
+    });
+
+    renderCommunityProfiles();
   } else {
     panel.innerHTML = `
       <div class="acct-form">
@@ -516,10 +802,38 @@ function buildAccountPanel() {
   }
 }
 
+function updateAuthScreen(user) {
+  const authScreen = document.getElementById('auth-screen');
+  if (!authScreen) return;
+  authScreen.classList.toggle('hidden', !!user);
+}
+
 window.MatrixCloud.onChange(user => {
   buildAccountPanel();
+  updateAuthScreen(user);
   if (user) syncFromCloud();
 });
+
+function bindAuthScreen() {
+  const emailEl = document.getElementById('auth-email');
+  const passEl  = document.getElementById('auth-password');
+  const errEl   = document.getElementById('auth-error');
+  document.getElementById('auth-signin-btn').addEventListener('click', async () => {
+    errEl.textContent = '';
+    try { await window.MatrixCloud.signIn(emailEl.value.trim(), passEl.value); }
+    catch (e) { errEl.textContent = friendlyAuthError(e); }
+  });
+  document.getElementById('auth-signup-btn').addEventListener('click', async () => {
+    errEl.textContent = '';
+    try { await window.MatrixCloud.signUp(emailEl.value.trim(), passEl.value); }
+    catch (e) { errEl.textContent = friendlyAuthError(e); }
+  });
+  document.getElementById('auth-guest-btn').addEventListener('click', () => {
+    updateAuthScreen(null);
+  });
+}
+
+bindAuthScreen();
 
 // ═══════════════════════════════════════════════════════════
 //  CANVAS

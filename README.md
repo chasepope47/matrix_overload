@@ -53,10 +53,18 @@ To enable it, you need your own Firebase project:
        match /saves/{uid} {
          allow read, write: if request.auth != null && request.auth.uid == uid;
        }
+       match /profiles/{uid} {
+         allow read: if true;
+         allow write: if request.auth != null && request.auth.uid == uid;
+       }
+       match /parties/{partyId} {
+         allow read: if true;
+         allow write: if request.auth != null;
+       }
      }
    }
    ```
-   This ensures a player can only read/write their own save document.
+   This ensures a player can only read/write their own save document while allowing public profile and party visibility.
 5. Go to **Project settings → General → Your apps**, click the web icon (`</>`) to register a web app, and copy the `firebaseConfig` object it gives you.
 6. Paste those values into the `firebaseConfig` object near the top of the first `<script type="module">` block in `index.html`.
 
