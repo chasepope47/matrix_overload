@@ -241,6 +241,33 @@ body {
 ::-webkit-scrollbar { height: 4px; width: 4px; }
 ::-webkit-scrollbar-track { background: #111; }
 ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+/* ── Account Panel ─────────────────────────────────────── */
+#panel-account {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  justify-content: center;
+  font-size: 12px;
+}
+.acct-row { display: flex; gap: 10px; align-items: center; }
+.acct-label { font-size: 9px; color: #444; text-transform: uppercase; letter-spacing: 0.07em; }
+.acct-value { color: #00ffcc; font-weight: bold; }
+.acct-form { display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; }
+.acct-form input {
+  background: #12121e;
+  border: 1px solid #242440;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-family: inherit;
+  font-size: 12px;
+  padding: 6px 8px;
+  width: 150px;
+}
+.acct-form input:focus { outline: none; border-color: #00ffcc; }
+.acct-btn-row { display: flex; gap: 6px; }
+.acct-error { color: #ff6666; font-size: 11px; max-width: 220px; }
 </style>
 </head>
 <body>
@@ -274,11 +301,13 @@ body {
     <button class="tab-btn active" data-tab="stats">Stats</button>
     <button class="tab-btn"        data-tab="upgrades">Upgrades</button>
     <button class="tab-btn"        data-tab="offline">Cache</button>
+    <button class="tab-btn"        data-tab="account">Account</button>
   </div>
   <div id="dock-content">
     <div id="panel-stats"></div>
     <div id="panel-upgrades" style="display:none"></div>
     <div id="panel-offline"  style="display:none"></div>
+    <div id="panel-account"  style="display:none"></div>
   </div>
 </div>
 
@@ -292,7 +321,66 @@ body {
   </div>
 </div>
 
-<script>
+<script type="module">
+// ═══════════════════════════════════════════════════════════
+//  FIREBASE — CLOUD ACCOUNTS & SAVES
+//
+//  Paste your own project's config below (Firebase console →
+//  Project settings → General → Your apps → SDK setup and
+//  configuration). See README.md for full setup steps.
+// ═══════════════════════════════════════════════════════════
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
+import {
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  signOut, onAuthStateChanged,
+} from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js';
+import {
+  getFirestore, doc, getDoc, setDoc,
+} from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey:            'AIzaSyDcLAPQiInNZrNQ-Izo1fwGxuh6VbKdaDw',
+  authDomain:        'matrix-overload.firebaseapp.com',
+  projectId:         'matrix-overload',
+  storageBucket:     'matrix-overload.firebasestorage.app',
+  messagingSenderId: '572099464243',
+  appId:             '1:572099464243:web:f84a9a7dd3b3f4c5a0e746',
+};
+
+const fbApp  = initializeApp(firebaseConfig);
+const fbAuth = getAuth(fbApp);
+const fbDb   = getFirestore(fbApp);
+
+window.MatrixCloud = {
+  user: null,
+  listeners: [],
+  onChange(cb) { this.listeners.push(cb); },
+  signUp(email, password) {
+    return createUserWithEmailAndPassword(fbAuth, email, password).then(c => c.user);
+  },
+  signIn(email, password) {
+    return signInWithEmailAndPassword(fbAuth, email, password).then(c => c.user);
+  },
+  signOutUser() { return signOut(fbAuth); },
+  push(state) {
+    if (!this.user) return Promise.resolve();
+    return setDoc(doc(fbDb, 'saves', this.user.uid), state).catch(() => {});
+  },
+  pull() {
+    if (!this.user) return Promise.resolve(null);
+    return getDoc(doc(fbDb, 'saves', this.user.uid))
+      .then(snap => snap.exists() ? snap.data() : null)
+      .catch(() => null);
+  },
+};
+
+onAuthStateChanged(fbAuth, user => {
+  window.MatrixCloud.user = user;
+  for (const cb of window.MatrixCloud.listeners) cb(user);
+});
+</script>
+
+<script type="module">
 'use strict';
 
 // ═══════════════════════════════════════════════════════════
@@ -359,9 +447,79 @@ let state = (() => {
 function saveState() {
   state.lastSaved = Date.now();
   try { localStorage.setItem('matrix_save', JSON.stringify(state)); } catch (_) {}
+  if (window.MatrixCloud.user) window.MatrixCloud.push(state);
 }
 window.addEventListener('beforeunload', saveState);
 setInterval(saveState, CFG.SAVE_INTERVAL_MS);
+
+// ═══════════════════════════════════════════════════════════
+//  ACCOUNT / CLOUD SYNC
+// ═══════════════════════════════════════════════════════════
+function friendlyAuthError(e) {
+  const code = (e && e.code) || '';
+  if (code.includes('email-already-in-use'))   return 'That email is already registered — try logging in.';
+  if (code.includes('invalid-email'))           return 'Enter a valid email address.';
+  if (code.includes('weak-password'))           return 'Password must be at least 6 characters.';
+  if (code.includes('wrong-password') || code.includes('invalid-credential'))
+                                                 return 'Wrong email or password.';
+  if (code.includes('user-not-found'))          return 'No account with that email — try signing up.';
+  return 'Something went wrong. Try again.';
+}
+
+async function syncFromCloud() {
+  const cloud = await window.MatrixCloud.pull();
+  if (cloud && (cloud.lastSaved || 0) > (state.lastSaved || 0)) {
+    // Cloud has a newer save (e.g. logging in on a new device) — adopt it.
+    try { localStorage.setItem('matrix_save', JSON.stringify(cloud)); } catch (_) {}
+    location.reload();
+  } else {
+    // No cloud save yet, or local is already current — push local up.
+    saveState();
+  }
+}
+
+function buildAccountPanel() {
+  const panel = document.getElementById('panel-account');
+  const user  = window.MatrixCloud.user;
+  if (user) {
+    panel.innerHTML = `
+      <div class="acct-row"><span class="acct-label">Signed in as</span><span class="acct-value">${user.email}</span></div>
+      <div class="acct-row"><span style="color:#666">Progress syncs to the cloud automatically.</span></div>
+      <button class="modal-btn" id="acct-signout-btn">Sign Out</button>
+    `;
+    document.getElementById('acct-signout-btn').addEventListener('click', () => window.MatrixCloud.signOutUser());
+  } else {
+    panel.innerHTML = `
+      <div class="acct-form">
+        <input type="email"    id="acct-email"    placeholder="email"    autocomplete="email">
+        <input type="password" id="acct-password" placeholder="password" autocomplete="current-password">
+        <div class="acct-btn-row">
+          <button class="modal-btn" id="acct-signin-btn">Log In</button>
+          <button class="modal-btn" id="acct-signup-btn">Sign Up</button>
+        </div>
+      </div>
+      <div class="acct-error" id="acct-error"></div>
+    `;
+    const emailEl = document.getElementById('acct-email');
+    const passEl  = document.getElementById('acct-password');
+    const errEl   = document.getElementById('acct-error');
+    document.getElementById('acct-signin-btn').addEventListener('click', async () => {
+      errEl.textContent = '';
+      try { await window.MatrixCloud.signIn(emailEl.value.trim(), passEl.value); }
+      catch (e) { errEl.textContent = friendlyAuthError(e); }
+    });
+    document.getElementById('acct-signup-btn').addEventListener('click', async () => {
+      errEl.textContent = '';
+      try { await window.MatrixCloud.signUp(emailEl.value.trim(), passEl.value); }
+      catch (e) { errEl.textContent = friendlyAuthError(e); }
+    });
+  }
+}
+
+window.MatrixCloud.onChange(user => {
+  buildAccountPanel();
+  if (user) syncFromCloud();
+});
 
 // ═══════════════════════════════════════════════════════════
 //  CANVAS
@@ -911,7 +1069,7 @@ function buildOfflinePanel() {
 // ═══════════════════════════════════════════════════════════
 //  TAB SWITCHING
 // ═══════════════════════════════════════════════════════════
-const TAB_IDS = ['stats', 'upgrades', 'offline'];
+const TAB_IDS = ['stats', 'upgrades', 'offline', 'account'];
 document.getElementById('dock-tabs').addEventListener('click', e => {
   const btn = e.target.closest('.tab-btn');
   if (!btn) return;
@@ -922,6 +1080,7 @@ document.getElementById('dock-tabs').addEventListener('click', e => {
   });
   if (tab === 'upgrades') buildUpgradePanel();
   if (tab === 'offline')  buildOfflinePanel();
+  if (tab === 'account')  buildAccountPanel();
 });
 
 // ═══════════════════════════════════════════════════════════
@@ -1035,6 +1194,7 @@ calcOffline();
 refreshStats();
 buildUpgradePanel();
 buildOfflinePanel();
+buildAccountPanel();
 
 // Seed initial enemies
 for (let i = 0; i < 22; i++) spawnEnemy('common');
