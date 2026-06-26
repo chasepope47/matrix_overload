@@ -185,6 +185,150 @@ body {
   transition: width 0.1s linear;
 }
 
+/* ── Equipment dock prompt ─────────────────────────────────── */
+#panel-equipment { display: flex; align-items: center; justify-content: center; height: 100%; }
+
+/* ── Equipment Modal ──────────────────────────────────────── */
+#equip-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.82);
+  z-index: 210;
+  align-items: center;
+  justify-content: center;
+}
+#equip-modal.show { display: flex; }
+.equip-modal-box {
+  background: #0e0e18;
+  border: 1px solid #00ffcc;
+  border-radius: 8px;
+  padding: 18px 22px;
+  width: 680px;
+  max-width: 92vw;
+  max-height: 86vh;
+}
+.equip-modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.equip-modal-title { font-size: 15px; color: #00ffcc; letter-spacing: 0.1em; }
+.equip-close-btn { background: transparent; border: none; color: #888; font-size: 22px; line-height: 1; cursor: pointer; padding: 0 4px; }
+.equip-close-btn:hover { color: #ff6666; }
+.equip-modal-body { display: flex; gap: 18px; align-items: flex-start; }
+
+.equip-left { width: 210px; flex-shrink: 0; }
+.equip-slots-grid {
+  display: grid;
+  grid-template-columns: 64px 64px 64px;
+  grid-template-rows: 64px 64px 64px;
+  grid-template-areas:
+    ".      helmet ."
+    "weapon chest  gloves"
+    ".      boots  .";
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+.equip-slot-cell {
+  background: #12121e;
+  border: 1px solid #242440;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: #555;
+  cursor: pointer;
+  text-align: center;
+  padding: 2px;
+}
+.equip-slot-cell.filled        { color: #ccc; }
+.equip-slot-cell.rarity-common    { border-color: #aaaaaa; }
+.equip-slot-cell.rarity-rare      { border-color: #3399ff; }
+.equip-slot-cell.rarity-epic      { border-color: #aa33ff; }
+.equip-slot-cell.rarity-legendary { border-color: #ffaa00; }
+.equip-slot-cell.rarity-mythic    { border-color: #ff3366; box-shadow: 0 0 6px #ff336655; }
+.equip-slot-cell[data-slot="weapon"] { grid-area: weapon; }
+.equip-slot-cell[data-slot="helmet"] { grid-area: helmet; }
+.equip-slot-cell[data-slot="chest"]  { grid-area: chest; }
+.equip-slot-cell[data-slot="gloves"] { grid-area: gloves; }
+.equip-slot-cell[data-slot="boots"]  { grid-area: boots; }
+.equip-slot-icon  { font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: bold; }
+.equip-slot-lvl   { font-size: 8px; color: #00ffcc; margin-top: 1px; }
+.set-bonus-row { font-size: 9px; color: #66ffcc; margin-bottom: 10px; line-height: 1.5; }
+
+.equip-detail { background: #12121e; border: 1px solid #242440; border-radius: 6px; padding: 10px; min-height: 130px; font-size: 11px; }
+.equip-detail-empty { color: #555; font-size: 10px; }
+.equip-detail .item-name { font-size: 12px; font-weight: bold; margin-bottom: 4px; }
+.equip-detail .item-stats { font-size: 10px; color: #888; margin: 4px 0; line-height: 1.4; }
+.equip-detail .item-effects { font-size: 9px; color: #ffcc44; margin-bottom: 6px; }
+.equip-detail .item-actions { display: flex; gap: 6px; margin-top: 6px; }
+
+.equip-right { flex: 1; min-width: 0; }
+.equip-toolbar { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+.toolbar-btn {
+  font-size: 9px;
+  padding: 5px 10px;
+  background: transparent;
+  border: 1px solid #333;
+  color: #aaa;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.toolbar-btn:hover { border-color: #00ffcc; color: #00ffcc; }
+.toolbar-hint { font-size: 8px; color: #444; margin-left: 4px; }
+
+.inv-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  max-height: 56vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.inv-cell {
+  position: relative;
+  aspect-ratio: 1;
+  background: #12121e;
+  border: 1px solid #333;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+.inv-cell.rarity-common    { border-color: #aaaaaa; color: #aaaaaa; }
+.inv-cell.rarity-rare      { border-color: #3399ff; color: #3399ff; }
+.inv-cell.rarity-epic      { border-color: #aa33ff; color: #aa33ff; }
+.inv-cell.rarity-legendary { border-color: #ffaa00; color: #ffaa00; }
+.inv-cell.rarity-mythic    { border-color: #ff3366; color: #ff3366; box-shadow: 0 0 6px #ff336655; }
+.inv-cell.selected { outline: 2px solid #00ffcc; outline-offset: 1px; }
+.inv-cell.equipped::after {
+  content: '';
+  position: absolute;
+  bottom: 2px; left: 2px; right: 2px;
+  height: 2px;
+  background: #00ffcc;
+  border-radius: 1px;
+}
+.inv-cell-lvl  { position: absolute; bottom: 2px; right: 3px; font-size: 7px; color: #ccc; }
+.inv-cell-lock { position: absolute; top: 1px; left: 2px; font-size: 8px; color: #ffcc44; }
+.inv-empty-msg { color: #555; font-size: 10px; grid-column: 1 / -1; }
+
+.item-btn { font-size: 8px; padding: 3px 8px; background: transparent; border: 1px solid #333; color: #aaa; border-radius: 3px; cursor: pointer; font-family: inherit; }
+.item-btn:hover { border-color: #00ffcc; color: #00ffcc; }
+.item-btn.equipped { border-color: #00ffcc; color: #00ffcc; }
+.item-name.rarity-common    { color: #aaaaaa; }
+.item-name.rarity-rare      { color: #3399ff; }
+.item-name.rarity-epic      { color: #aa33ff; }
+.item-name.rarity-legendary { color: #ffaa00; }
+.item-name.rarity-mythic    { color: #ff3366; }
+
 /* ── Offline Panel ─────────────────────────────────────── */
 #panel-offline {
   display: flex;
@@ -362,6 +506,13 @@ body {
 <div id="hud">
   <div class="hud-stage">STAGE <span id="hud-stage-num">1</span></div>
 
+  <div class="hud-boss-wrap" id="hud-player-wrap">
+    <div class="hud-bar-label">HP</div>
+    <div class="hud-bar-outer" style="width:100px">
+      <div class="hud-bar-inner" id="player-bar-inner" style="width:100%;background:linear-gradient(90deg,#008866,#00ffcc)"></div>
+    </div>
+  </div>
+
   <div class="hud-boss-wrap" id="hud-boss-wrap" style="display:none">
     <div class="hud-bar-label">Boss HP</div>
     <div class="hud-bar-outer" style="width:140px">
@@ -388,12 +539,44 @@ body {
     <button class="tab-btn"        data-tab="upgrades">Upgrades</button>
     <button class="tab-btn"        data-tab="offline">Cache</button>
     <button class="tab-btn"        data-tab="account">Account</button>
+    <button class="tab-btn"        data-tab="equipment">Gear</button>
   </div>
   <div id="dock-content">
     <div id="panel-stats"></div>
     <div id="panel-upgrades" style="display:none"></div>
     <div id="panel-offline"  style="display:none"></div>
     <div id="panel-account"  style="display:none"></div>
+    <div id="panel-equipment" style="display:none">
+      <button class="modal-btn" id="reopen-equip-btn">Open Equipment</button>
+    </div>
+  </div>
+</div>
+
+<!-- Equipment Modal -->
+<div id="equip-modal">
+  <div class="equip-modal-box">
+    <div class="equip-modal-header">
+      <span class="equip-modal-title">EQUIPMENT</span>
+      <button class="equip-close-btn" id="equip-close-btn">×</button>
+    </div>
+    <div class="equip-modal-body">
+      <div class="equip-left">
+        <div class="equip-slots-grid" id="equip-slots-grid"></div>
+        <div class="set-bonus-row" id="equip-set-bonus"></div>
+        <div class="equip-detail" id="equip-detail">
+          <div class="equip-detail-empty">Select an item to view details</div>
+        </div>
+      </div>
+      <div class="equip-right">
+        <div class="equip-toolbar">
+          <button class="toolbar-btn" id="btn-sort">Sort</button>
+          <button class="toolbar-btn" id="btn-combine">Combine All</button>
+          <button class="toolbar-btn" id="btn-recycle">Recycle All</button>
+          <span class="toolbar-hint">Shift+Click an item to lock it (protects from Recycle/Combine)</span>
+        </div>
+        <div class="inv-grid" id="inv-grid"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -542,7 +725,6 @@ const CFG = {
   BASE_HP:            8,
   HP_SCALE:           1.12,
   BASE_TICK_DMG:      1,
-  TICK_DMG_SCALE:     1.14,
   BASE_AUTO:          0.5,
   BASE_TICK_MS:        500,
   MIN_TICK_MS:         60,
@@ -561,11 +743,14 @@ const CFG = {
   TARGET_DENSITY:     55,
   POOL_SIZE:          150,
   WAVE_BURST_CD_MS:   15000,
+  INVENTORY_CAP:      36,
+  COMBINE_THRESHOLD:  5,
+  LEVEL_STAT_SCALE:   1.15,
+  PICKUP_RADIUS:      14,
 };
 
 const UPGRADE_DEFS = [
   { id: 'click_power', name: 'Turret Speed', effect: 'Faster damage tick/tier', baseCost: 10,   active: false },
-  { id: 'tick_damage', name: 'Impact Force', effect: '×1.14 dmg/tier', baseCost: 20,   active: false },
   { id: 'auto_tick',   name: 'Auto Drone',   effect: '×1.14 per tier', baseCost: 50,   active: false },
   { id: 'aoe_radius',  name: 'Square Size',  effect: '+6px per tier', baseCost: 200,  active: false },
   { id: 'crit_chance', name: 'Critical Hit', effect: '+6% crit/tier (3× dmg)', baseCost: 500, active: false },
@@ -578,7 +763,6 @@ const UPGRADE_DEFS = [
 // ═══════════════════════════════════════════════════════════
 const enemyHp      = s   => CFG.BASE_HP * Math.pow(CFG.HP_SCALE, s - 1);
 const tickIntervalMs = lvl => Math.max(CFG.MIN_TICK_MS, CFG.BASE_TICK_MS * Math.pow(CFG.TICK_SPEED_SCALE, lvl));
-const tickDmg       = lvl => CFG.BASE_TICK_DMG * Math.pow(CFG.TICK_DMG_SCALE, lvl);
 const squareHalf    = lvl => CFG.SQUARE_HALF + lvl * CFG.SQUARE_RADIUS_STEP;
 const autoDps       = lvl => lvl === 0 ? 0 : CFG.BASE_AUTO * Math.pow(CFG.AUTO_SCALE, lvl - 1);
 const upgCost       = (def, lvl) => Math.floor(def.baseCost * Math.pow(CFG.COST_SCALE, lvl));
@@ -592,14 +776,23 @@ const DEFAULT_STATE = {
   upgrades:    {},
   prestigeMul: 1,   // reserved — not used yet
   lastSaved:   Date.now(),
+  playerHp:    null,   // lazily initialized to player.maxHp on first boot
+  inventory:   [],
+  equipped:    { weapon: null, helmet: null, chest: null, gloves: null, boots: null },
+  pickups:     [],   // dropped items waiting on the ground to be hovered up
 };
 
 let state = (() => {
   try {
     const s = JSON.parse(localStorage.getItem('matrix_save'));
-    if (s) return Object.assign({}, DEFAULT_STATE, s, { upgrades: Object.assign({}, s.upgrades) });
+    if (s) return Object.assign({}, DEFAULT_STATE, s, {
+      upgrades:  Object.assign({}, s.upgrades),
+      equipped:  Object.assign({}, DEFAULT_STATE.equipped, s.equipped),
+      inventory: Array.isArray(s.inventory) ? s.inventory : [],
+      pickups:   Array.isArray(s.pickups) ? s.pickups : [],
+    });
   } catch (_) {}
-  return Object.assign({}, DEFAULT_STATE, { upgrades: {} });
+  return Object.assign({}, DEFAULT_STATE, { upgrades: {}, equipped: { ...DEFAULT_STATE.equipped }, inventory: [], pickups: [] });
 })();
 
 function saveState() {
@@ -647,7 +840,19 @@ function escapeHtml(str = '') {
     .replace(/"/g, '&quot;');
 }
 
+function activeSetName() {
+  const counts = getSetCounts();
+  const bestEntry = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  if (!bestEntry || bestEntry[1] < 2) return null;
+  return ARMOR_SETS[bestEntry[0]]?.name || null;
+}
+
 function summarizeBuildForProfile() {
+  const equippedRarities = {};
+  for (const slot of SLOTS) {
+    const item = getEquippedItem(slot);
+    if (item) equippedRarities[slot] = item.rarity;
+  }
   return {
     stage: state.stage || 1,
     resources: state.resources || 0,
@@ -655,6 +860,8 @@ function summarizeBuildForProfile() {
     upgrades: Object.fromEntries(
       UPGRADE_DEFS.map(def => [def.id, state.upgrades?.[def.id] || 0]).filter(([, lvl]) => lvl > 0)
     ),
+    equippedRarities,
+    setName: activeSetName(),
   };
 }
 
@@ -675,7 +882,7 @@ async function renderCommunityProfiles() {
     return `
       <div class="profile-card">
         <div class="profile-name">${escapeHtml(profile.displayName || profile.email || 'Builder')}</div>
-        <div class="profile-meta">Stage ${escapeHtml(build.stage || 1)} • ${escapeHtml(build.resources || 0)} resources</div>
+        <div class="profile-meta">Stage ${escapeHtml(build.stage || 1)} • ${escapeHtml(build.resources || 0)} resources${build.setName ? ` • ${escapeHtml(build.setName)} set` : ''}</div>
         <div class="profile-bio">${escapeHtml(profile.bio || 'No bio yet')}</div>
         <div class="profile-tags">${upgrades || '<span class="profile-tag">Fresh recruit</span>'}</div>
       </div>
@@ -895,6 +1102,8 @@ function spawnEnemy(type) {
     flash: 0,
     pulseT: Math.random() * Math.PI * 2,
     rot: Math.random() * Math.PI * 2,
+    burnDmgPerTick: 0,
+    burnTicksLeft: 0,
   });
 
   if (type === 'boss') { bossAlive = true; bossRef = e; }
@@ -905,6 +1114,101 @@ function liveCount() {
   let n = 0;
   for (const e of pool) if (e.alive) n++;
   return n;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PLAYER
+// ═══════════════════════════════════════════════════════════
+const CFG_PLAYER = {
+  BASE_MAX_HP:      100,
+  BASE_DEFENSE:     0,
+  ENEMY_DPS_BASE:   1.5,
+  ENEMY_DPS_SCALE:  1.10,
+  RADIUS:           26,
+  TOUCH_MARGIN:     10,
+};
+
+const player = { maxHp: CFG_PLAYER.BASE_MAX_HP, defense: CFG_PLAYER.BASE_DEFENSE, lifestealPct: 0, critBonusPct: 0 };
+
+const enemyDpsOnPlayer  = stage => CFG_PLAYER.ENEMY_DPS_BASE * Math.pow(CFG_PLAYER.ENEMY_DPS_SCALE, stage - 1);
+const enemyPlayerDmgMul = type  => type === 'boss' ? 3 : type === 'elite' ? 1.5 : 1;
+
+function getEquippedItem(slot) {
+  const id = state.equipped[slot];
+  if (!id) return null;
+  return state.inventory.find(i => i.id === id) || null;
+}
+
+function getSetCounts() {
+  const counts = {};
+  for (const slot of ['helmet', 'chest', 'gloves', 'boots']) {
+    const item = getEquippedItem(slot);
+    if (item && item.setId) counts[item.setId] = (counts[item.setId] || 0) + 1;
+  }
+  return counts;
+}
+
+function computeSetBonus() {
+  const result = { hp: 0, def: 0, lifestealPct: 0, critBonusPct: 0 };
+  for (const [setId, count] of Object.entries(getSetCounts())) {
+    const set = ARMOR_SETS[setId];
+    if (!set) continue;
+    const bonus = count >= 4 ? set.fourPc : count >= 2 ? set.twoPc : null;
+    if (!bonus) continue;
+    result.hp           += bonus.hp           || 0;
+    result.def           += bonus.def          || 0;
+    result.lifestealPct += bonus.lifestealPct || 0;
+    result.critBonusPct += bonus.critBonusPct || 0;
+  }
+  return result;
+}
+
+function recalcPlayerStats() {
+  let hp = CFG_PLAYER.BASE_MAX_HP, def = CFG_PLAYER.BASE_DEFENSE, lifesteal = 0;
+  for (const slot of ['helmet', 'chest', 'gloves', 'boots']) {
+    const item = getEquippedItem(slot);
+    if (!item) continue;
+    const stats = effectiveStats(item);
+    hp  += stats.hp  || 0;
+    def += stats.def || 0;
+  }
+  const weapon = getEquippedItem('weapon');
+  if (weapon) {
+    for (const eff of weapon.effects) if (eff.type === 'lifesteal') lifesteal += eff.magnitude;
+  }
+  const setBonus = computeSetBonus();
+  hp        += setBonus.hp;
+  def       += setBonus.def;
+  lifesteal += setBonus.lifestealPct;
+
+  player.maxHp        = hp;
+  player.defense       = def;
+  player.lifestealPct = lifesteal;
+  player.critBonusPct = setBonus.critBonusPct;
+
+  if (state.playerHp != null) state.playerHp = Math.min(state.playerHp, player.maxHp);
+}
+
+function applyPlayerDamage(raw) {
+  if (raw <= 0) return;
+  const reduced = Math.max(raw * 0.05, raw - player.defense);
+  state.playerHp -= reduced;
+  if (state.playerHp <= 0) handlePlayerDeath();
+}
+
+function handlePlayerDeath() {
+  triggerShake(24, 8);
+  triggerFlash(0.5, '#ff0044');
+  sfx.playerDown();
+  floatText(W / 2, H / 2 - 40, 'SYSTEM REBOOT', '#ff4466', true);
+
+  for (const e of pool) e.alive = false;
+  bossAlive = false; bossRef = null;
+  stageKills = 0;
+  eliteCountdown = CFG.ELITE_EVERY;
+  document.getElementById('hud-boss-wrap').style.display = 'none';
+
+  state.playerHp = player.maxHp;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -937,6 +1241,12 @@ const sfx = {
   crit() { beep(880, 0.07, 0.14); },
   boss() { beep(110, 0.35, 0.16, 'sawtooth'); setTimeout(() => beep(165, 0.25, 0.12, 'sawtooth'), 140); },
   burst(){ beep(330, 0.2,  0.12, 'sawtooth'); },
+  playerDown() { beep(80, 0.4, 0.18, 'sawtooth'); setTimeout(() => beep(60, 0.3, 0.14, 'sawtooth'), 180); },
+  lightning()  { beep(1200, 0.04, 0.08, 'square'); },
+  itemDrop()   { beep(660, 0.08, 0.1, 'triangle'); },
+  pickup()     { beep(900, 0.05, 0.08, 'triangle'); },
+  equip()      { beep(440, 0.06, 0.09, 'square'); },
+  salvage()    { beep(300, 0.05, 0.08, 'square'); },
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -1008,6 +1318,18 @@ function killEnemy(e) {
   floatText(e.x, e.y - 22, `+${fmt(gain)}`, '#ffcc44');
   burst(e.x, e.y, type === 'boss' ? '#ff4400' : type === 'elite' ? '#ff00cc' : '#00ffcc');
   sfx.kill();
+
+  const drop = rollDrop(type);
+  if (drop) {
+    spawnPickup(e.x, e.y, drop);
+    announceDrop(e.x, e.y, drop);
+  }
+  if (type === 'boss' && Math.random() < 0.35) {
+    const bonus = generateItem(SLOTS[Math.floor(Math.random() * SLOTS.length)], pickWeighted(RARITY_WEIGHTS_BY_TYPE.boss));
+    spawnPickup(e.x + 18, e.y, bonus);
+    announceDrop(e.x + 18, e.y, bonus);
+  }
+
   e.alive = false;
 
   if (type === 'boss') {
@@ -1059,6 +1381,285 @@ function fireWaveBurst() {
 }
 
 // ═══════════════════════════════════════════════════════════
+//  LOOT / EQUIPMENT
+// ═══════════════════════════════════════════════════════════
+const SLOTS = ['weapon', 'helmet', 'chest', 'gloves', 'boots'];
+
+const RARITY_DEFS = {
+  common:    { label: 'Common',    color: '#aaaaaa', weight: 50,   dmgRange: [0.8, 1.1], hpRange: [6, 12],   defRange: [1, 3],   effectSlots: 0 },
+  rare:      { label: 'Rare',      color: '#3399ff', weight: 30,   dmgRange: [1.1, 1.6], hpRange: [12, 22],  defRange: [3, 6],   effectSlots: 0 },
+  epic:      { label: 'Epic',      color: '#aa33ff', weight: 13,   dmgRange: [1.6, 2.4], hpRange: [22, 38],  defRange: [6, 11],  effectSlots: 1 },
+  legendary: { label: 'Legendary', color: '#ffaa00', weight: 5.5,  dmgRange: [2.4, 3.6], hpRange: [38, 62],  defRange: [11, 18], effectSlots: 1 },
+  mythic:    { label: 'Mythic',    color: '#ff3366', weight: 1.5,  dmgRange: [3.6, 5.5], hpRange: [62, 100], defRange: [18, 28], effectSlots: 2 },
+};
+const RARITY_ORDER = ['common', 'rare', 'epic', 'legendary', 'mythic'];
+
+const EFFECT_BANDS = {
+  epic:      { lightning: [0.35, 0.50], fire: [0.12, 0.20], lifesteal: [0.04, 0.08] },
+  legendary: { lightning: [0.50, 0.70], fire: [0.20, 0.30], lifesteal: [0.08, 0.14] },
+  mythic:    { lightning: [0.55, 0.80], fire: [0.25, 0.38], lifesteal: [0.10, 0.18] },
+};
+
+const ARMOR_SETS = {
+  neon_wraith:     { name: 'Neon Wraith',     color: '#00ffaa',
+                      twoPc:  { hp: 25, def: 0,  lifestealPct: 0 },
+                      fourPc: { hp: 70, def: 8,  lifestealPct: 0.05 } },
+  chrome_sentinel: { name: 'Chrome Sentinel', color: '#88aaff',
+                      twoPc:  { hp: 10, def: 6,  lifestealPct: 0 },
+                      fourPc: { hp: 40, def: 20, lifestealPct: 0 } },
+  volt_circuit:    { name: 'Volt Circuit',    color: '#ffee44',
+                      twoPc:  { hp: 0,  def: 5,  critBonusPct: 0 },
+                      fourPc: { hp: 15, def: 8,  critBonusPct: 6 } },
+};
+
+const SALVAGE_VALUE = { common: 15, rare: 60, epic: 250, legendary: 900, mythic: 3000 };
+
+const DROP_CHANCE = { common: 0.04, elite: 0.18, boss: 1.0 };
+// Mythic is intentionally rare — ~0.5% of drops from common kills, scaling up
+// somewhat for tougher kills so bosses/elites still feel like the best loot source.
+const RARITY_WEIGHTS_BY_TYPE = {
+  common: { common: 50.5, rare: 30.3, epic: 13.1, legendary: 5.6, mythic: 0.5 },
+  elite:  { common: 25.9, rare: 31.1, epic: 27.0, legendary: 14.5, mythic: 1.5 },
+  boss:   { common: 10.5, rare: 26.4, epic: 36.9, legendary: 23.2, mythic: 3 },
+};
+
+const WEAPON_NAME_WORDS = ['Pulse Blade', 'Arc Cannon', 'Shard Rifle', 'Volt Lance'];
+
+function rangeRoll([min, max]) { return min + Math.random() * (max - min); }
+
+function pickWeighted(weights) {
+  const total = Object.values(weights).reduce((a, b) => a + b, 0);
+  let roll = Math.random() * total;
+  for (const [key, w] of Object.entries(weights)) {
+    if (roll < w) return key;
+    roll -= w;
+  }
+  return Object.keys(weights)[0];
+}
+
+function pickRandomSet() {
+  const ids = Object.keys(ARMOR_SETS);
+  return ids[Math.floor(Math.random() * ids.length)];
+}
+
+const weaponBaseDmg = stage => CFG.BASE_TICK_DMG * 2 * Math.pow(1.07, stage - 1);
+
+function rollWeaponEffects(rarity) {
+  const def = RARITY_DEFS[rarity];
+  const effects = [];
+  const bands = EFFECT_BANDS[rarity];
+  if (!bands) return effects;
+  const types = ['lightning', 'fire', 'lifesteal'];
+  for (let i = 0; i < def.effectSlots; i++) {
+    const type = types[Math.floor(Math.random() * types.length)];
+    effects.push({ type, magnitude: rangeRoll(bands[type]) });
+  }
+  return effects;
+}
+
+function templateItemName(slot, rarity, setId) {
+  const rarityLabel = RARITY_DEFS[rarity].label;
+  if (slot === 'weapon') {
+    const word = WEAPON_NAME_WORDS[Math.floor(Math.random() * WEAPON_NAME_WORDS.length)];
+    return `${rarityLabel} ${word}`;
+  }
+  const setName = ARMOR_SETS[setId]?.name || 'Unbound';
+  const slotLabel = slot.charAt(0).toUpperCase() + slot.slice(1);
+  return `${rarityLabel} ${setName} ${slotLabel}`;
+}
+
+function generateItem(slot, rarity) {
+  const id  = `itm_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  const def = RARITY_DEFS[rarity];
+
+  if (slot === 'weapon') {
+    const dmg     = weaponBaseDmg(state.stage) * rangeRoll(def.dmgRange);
+    const effects = rollWeaponEffects(rarity);
+    return { id, slot, rarity, setId: null, name: templateItemName(slot, rarity, null), stats: { dmg }, effects, level: 1, locked: false };
+  }
+
+  const hp     = rangeRoll(def.hpRange);
+  const armorDef = rangeRoll(def.defRange);
+  const setId  = pickRandomSet();
+  return { id, slot, rarity, setId, name: templateItemName(slot, rarity, setId), stats: { hp, def: armorDef }, effects: [], level: 1, locked: false };
+}
+
+function rarityColor(rarity) { return RARITY_DEFS[rarity]?.color || '#aaaaaa'; }
+
+function rollDrop(type) {
+  if (Math.random() >= DROP_CHANCE[type]) return null;
+  const rarity = pickWeighted(RARITY_WEIGHTS_BY_TYPE[type]);
+  const slot   = SLOTS[Math.floor(Math.random() * SLOTS.length)];
+  return generateItem(slot, rarity);
+}
+
+// ── Item leveling / combine ──────────────────────────────────
+function effectiveStats(item) {
+  const mult = Math.pow(CFG.LEVEL_STAT_SCALE, (item.level || 1) - 1);
+  if (item.slot === 'weapon') return { dmg: item.stats.dmg * mult };
+  return { hp: item.stats.hp * mult, def: item.stats.def * mult };
+}
+
+function groupKey(item) { return `${item.name}|${item.level || 1}`; }
+
+function getCombineGroups({ skipLocked = false } = {}) {
+  const groups = {};
+  for (const item of state.inventory) {
+    if (Object.values(state.equipped).includes(item.id)) continue;
+    if (skipLocked && item.locked) continue;
+    const key = groupKey(item);
+    (groups[key] = groups[key] || []).push(item);
+  }
+  return groups;
+}
+
+function combineGroupByKey(key, opts) {
+  const groups = getCombineGroups(opts);
+  const items = groups[key];
+  if (!items || items.length < CFG.COMBINE_THRESHOLD) return false;
+  const survivor = items[0];
+  const consumed = items.slice(1, CFG.COMBINE_THRESHOLD);
+  for (const c of consumed) {
+    const idx = state.inventory.findIndex(i => i.id === c.id);
+    if (idx !== -1) state.inventory.splice(idx, 1);
+  }
+  survivor.level = (survivor.level || 1) + 1;
+  sfx.equip();
+  return true;
+}
+
+function combineAll() {
+  let combinedAny = false;
+  let progress = true;
+  while (progress) {
+    progress = false;
+    const groups = getCombineGroups({ skipLocked: true });
+    for (const key of Object.keys(groups)) {
+      if (groups[key].length >= CFG.COMBINE_THRESHOLD && combineGroupByKey(key, { skipLocked: true })) {
+        combinedAny = true;
+        progress = true;
+      }
+    }
+  }
+  return combinedAny;
+}
+
+function sortInventory() {
+  const rarityRank = Object.fromEntries(RARITY_ORDER.map((r, i) => [r, i]));
+  state.inventory.sort((a, b) =>
+    (rarityRank[b.rarity] - rarityRank[a.rarity]) ||
+    (b.level || 1) - (a.level || 1) ||
+    a.slot.localeCompare(b.slot)
+  );
+}
+
+function recycleAll() {
+  let gained = 0;
+  state.inventory = state.inventory.filter(item => {
+    if (item.locked) return true;
+    if (Object.values(state.equipped).includes(item.id)) return true;
+    gained += SALVAGE_VALUE[item.rarity] || 0;
+    return false;
+  });
+  if (gained > 0) {
+    state.resources += gained;
+    sfx.salvage();
+  }
+  return gained;
+}
+
+function addItemToInventory(item) {
+  if (state.inventory.length >= CFG.INVENTORY_CAP) {
+    floatText(W / 2, H / 2 + 60, 'Inventory full!', '#ff6666');
+    return false;
+  }
+  state.inventory.push(item);
+  return true;
+}
+
+function announceDrop(x, y, item) {
+  const color = rarityColor(item.rarity);
+  if (item.rarity === 'legendary' || item.rarity === 'mythic') {
+    announceEpicDrop(x, y, item);
+    return;
+  }
+  floatText(x, y - 36, `${RARITY_DEFS[item.rarity].label.toUpperCase()} ${item.slot.toUpperCase()}!`, color, true);
+  burst(x, y, color, 10);
+  sfx.itemDrop();
+}
+
+function announceEpicDrop(x, y, item) {
+  const color = rarityColor(item.rarity);
+  const isMythic = item.rarity === 'mythic';
+  triggerShake(isMythic ? 16 : 10, isMythic ? 5 : 3);
+  triggerFlash(isMythic ? 0.35 : 0.22, color);
+  floatText(x, y - 50, `${RARITY_DEFS[item.rarity].label.toUpperCase()} DROP!`, color, true);
+  floatText(x, y - 32, item.name, color, true);
+  burst(x, y, color, isMythic ? 28 : 18);
+  sfx.itemDrop();
+  if (isMythic) setTimeout(() => sfx.itemDrop(), 140);
+}
+
+function salvageItem(itemId) {
+  const idx = state.inventory.findIndex(i => i.id === itemId);
+  if (idx === -1) return;
+  const item = state.inventory[idx];
+  if (Object.values(state.equipped).includes(itemId)) return;
+  state.resources += SALVAGE_VALUE[item.rarity] || 0;
+  state.inventory.splice(idx, 1);
+  sfx.salvage();
+  if (document.getElementById('equip-modal').classList.contains('show')) renderEquipModal();
+}
+
+// ── Ground pickups — items drop on the field and must be hovered
+//    over (with the same turret square used for combat) to collect ──
+function spawnPickup(x, y, item) {
+  state.pickups.push({ id: item.id, x, y, item, spawnedAt: Date.now() });
+}
+
+let pickupFullNoticeAt = 0;
+function updatePickups() {
+  if (!cursor.active || !state.pickups.length) return;
+  const half = squareHalf(state.upgrades.aoe_radius || 0) + CFG.PICKUP_RADIUS;
+  for (let i = state.pickups.length - 1; i >= 0; i--) {
+    const p = state.pickups[i];
+    if (Math.abs(p.x - cursor.x) > half || Math.abs(p.y - cursor.y) > half) continue;
+    if (state.inventory.length >= CFG.INVENTORY_CAP) {
+      if (Date.now() - pickupFullNoticeAt > 1000) {
+        floatText(p.x, p.y - 18, 'Inventory full!', '#ff6666');
+        pickupFullNoticeAt = Date.now();
+      }
+      continue;
+    }
+    state.inventory.push(p.item);
+    state.pickups.splice(i, 1);
+    floatText(p.x, p.y - 18, p.item.name, rarityColor(p.item.rarity));
+    sfx.pickup();
+  }
+}
+
+function drawPickups() {
+  const now = Date.now();
+  for (const p of state.pickups) {
+    const bob   = Math.sin((now - p.spawnedAt) / 260) * 4;
+    const color = rarityColor(p.item.rarity);
+    const epic  = p.item.rarity === 'legendary' || p.item.rarity === 'mythic';
+    ctx.save();
+    ctx.translate(Math.round(p.x), Math.round(p.y + bob));
+    if (epic) { ctx.shadowColor = color; ctx.shadowBlur = 14; }
+    ctx.beginPath();
+    ctx.moveTo(0, -9); ctx.lineTo(9, 0); ctx.lineTo(0, 9); ctx.lineTo(-9, 0);
+    ctx.closePath();
+    ctx.fillStyle   = '#111';
+    ctx.strokeStyle = color;
+    ctx.lineWidth   = 2.5;
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
 //  SPAWNER
 // ═══════════════════════════════════════════════════════════
 let spawnAccum = 0;
@@ -1081,6 +1682,8 @@ function maybeSpawn(dt) {
 function updateEntities(dt) {
   const dt16 = dt / 16;
   const cx = W * 0.5, cy = H * 0.5;
+  const touchRadius = CFG_PLAYER.RADIUS + CFG_PLAYER.TOUCH_MARGIN;
+  let playerDmgThisFrame = 0;
   for (const e of pool) {
     if (!e.alive) continue;
     const dx   = cx - e.x, dy = cy - e.y;
@@ -1095,7 +1698,12 @@ function updateEntities(dt) {
     if (e.flash  > 0) e.flash--;
     e.pulseT += 0.07;
     e.rot    += e.type === 'boss' ? 0.009 : 0.018;
+
+    if (dist <= touchRadius) {
+      playerDmgThisFrame += enemyDpsOnPlayer(state.stage) * enemyPlayerDmgMul(e.type) * (dt / 1000);
+    }
   }
+  if (playerDmgThisFrame > 0) applyPlayerDamage(playerDmgThisFrame);
 }
 
 function updateParticles() {
@@ -1132,6 +1740,15 @@ function tickAuto(dt) {
   }
 }
 
+function tickBurns(dt) {
+  for (const e of pool) {
+    if (!e.alive || e.burnTicksLeft <= 0) continue;
+    e.hp -= e.burnDmgPerTick * (dt / 1000);
+    e.burnTicksLeft -= dt;
+    if (e.hp <= 0) killEnemy(e);
+  }
+}
+
 // ═══════════════════════════════════════════════════════════
 //  DRAW
 // ═══════════════════════════════════════════════════════════
@@ -1145,6 +1762,27 @@ function drawBg() {
   for (let y = 0; y <= H; y += step) {
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
   }
+}
+
+function drawPlayer() {
+  const cx = W * 0.5, cy = H * 0.5;
+  const r  = CFG_PLAYER.RADIUS;
+  const hpPct = Math.max(0, state.playerHp / player.maxHp);
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.fillStyle   = '#0a2a28';
+  ctx.strokeStyle = hpPct > 0.3 ? '#00ffcc' : '#ff4444';
+  ctx.lineWidth   = 2.5;
+  ctx.fill();
+  ctx.stroke();
+  const bw = r * 2.4;
+  ctx.fillStyle = '#111';
+  ctx.fillRect(-bw / 2, r + 8, bw, 5);
+  ctx.fillStyle = hpPct > 0.5 ? '#00ffcc' : hpPct > 0.25 ? '#ffaa00' : '#ff4444';
+  ctx.fillRect(-bw / 2, r + 8, bw * hpPct, 5);
+  ctx.restore();
 }
 
 function drawCommon(e) {
@@ -1296,6 +1934,9 @@ function refreshHUD(dt) {
   document.getElementById('hud-resources').textContent = `⬡ ${fmt(Math.floor(state.resources))}`;
   document.getElementById('hud-dps').textContent = `Auto: ${fmt(autoDps(state.upgrades.auto_tick||0))}/s`;
 
+  const hpPct = Math.max(0, Math.min(100, (state.playerHp / player.maxHp) * 100));
+  document.getElementById('player-bar-inner').style.width = `${hpPct.toFixed(1)}%`;
+
   const kilEl = document.getElementById('hud-kills');
   if (bossAlive) {
     kilEl.textContent = '!! BOSS !!';
@@ -1319,17 +1960,18 @@ function refreshHUD(dt) {
 // ═══════════════════════════════════════════════════════════
 function refreshStats() {
   const speedLvl = state.upgrades.click_power || 0;
-  const dmgLvl   = state.upgrades.tick_damage || 0;
   const alvl     = state.upgrades.auto_tick   || 0;
   const crPct    = ((state.upgrades.crit_chance || 0) * 6).toFixed(0);
   const ticksSec = (1000 / tickIntervalMs(speedLvl)).toFixed(1);
   const squarePx = squareHalf(state.upgrades.aoe_radius || 0) * 2;
   document.getElementById('panel-stats').innerHTML = `
-    <div class="stat-item"><span class="stat-label">Tick DMG</span><span class="stat-value">${fmt(tickDmg(dmgLvl))}</span></div>
+    <div class="stat-item"><span class="stat-label">Tick DMG</span><span class="stat-value">${fmt(currentWeaponDamage())}</span></div>
     <div class="stat-item"><span class="stat-label">Tick Rate</span><span class="stat-value">${ticksSec}/s</span></div>
     <div class="stat-item"><span class="stat-label">Square</span><span class="stat-value">${squarePx}px</span></div>
     <div class="stat-item"><span class="stat-label">Auto DPS</span><span class="stat-value">${fmt(autoDps(alvl))}</span></div>
     <div class="stat-item"><span class="stat-label">Crit</span><span class="stat-value">${crPct}%</span></div>
+    <div class="stat-item"><span class="stat-label">Max HP</span><span class="stat-value">${fmt(player.maxHp)}</span></div>
+    <div class="stat-item"><span class="stat-label">Defense</span><span class="stat-value">${fmt(player.defense)}</span></div>
     <div class="stat-item"><span class="stat-label">Resources</span><span class="stat-value">${fmt(Math.floor(state.resources))}</span></div>
     <div class="stat-item"><span class="stat-label">Enemies</span><span class="stat-value">${liveCount()}</span></div>
     <div class="stat-item"><span class="stat-label">Stage</span><span class="stat-value">${state.stage}</span></div>
@@ -1416,10 +2058,158 @@ function buildOfflinePanel() {
   `;
 }
 
+function itemStatsLine(item) {
+  const stats = effectiveStats(item);
+  return item.slot === 'weapon'
+    ? `DMG ${fmt(stats.dmg)}`
+    : `HP +${fmt(stats.hp)} / DEF +${fmt(stats.def)}`;
+}
+
+function itemEffectsLine(item) {
+  if (!item.effects.length) return '';
+  return item.effects.map(eff => `${eff.type} ${(eff.magnitude * 100).toFixed(0)}%`).join(', ');
+}
+
+const SLOT_ABBR = { weapon: 'WPN', helmet: 'HLM', chest: 'CHT', gloves: 'GLV', boots: 'BTS' };
+let selectedItemId = null;
+
+function openEquipModal() {
+  document.getElementById('equip-modal').classList.add('show');
+  renderEquipModal();
+}
+
+function closeEquipModal() {
+  document.getElementById('equip-modal').classList.remove('show');
+}
+
+function renderEquipModal() {
+  renderEquipSlots();
+  renderInvGrid();
+  renderEquipDetail();
+}
+
+function renderEquipSlots() {
+  const grid = document.getElementById('equip-slots-grid');
+  grid.innerHTML = SLOTS.map(slot => {
+    const item = getEquippedItem(slot);
+    return `
+      <div class="equip-slot-cell ${item ? 'filled rarity-' + item.rarity : ''}" data-slot="${slot}" title="${item ? escapeHtml(item.name) : 'Empty ' + slot}">
+        <div class="equip-slot-icon">${SLOT_ABBR[slot]}</div>
+        ${item ? `<div class="equip-slot-lvl">Lv${item.level || 1}</div>` : ''}
+      </div>`;
+  }).join('');
+
+  const setLines = Object.entries(getSetCounts())
+    .filter(([, count]) => count >= 2)
+    .map(([setId, count]) => `${ARMOR_SETS[setId].name} (${count}/4 — ${count >= 4 ? 'Full' : 'Partial'} bonus active)`)
+    .join('<br>');
+  document.getElementById('equip-set-bonus').innerHTML = setLines || 'No set bonuses active';
+
+  grid.querySelectorAll('.equip-slot-cell').forEach(cell => {
+    cell.addEventListener('click', () => {
+      const item = getEquippedItem(cell.dataset.slot);
+      if (!item) return;
+      selectedItemId = item.id;
+      renderEquipDetail();
+    });
+  });
+}
+
+function renderInvGrid() {
+  const grid = document.getElementById('inv-grid');
+  if (!state.inventory.length) {
+    grid.innerHTML = '<div class="inv-empty-msg">No items yet — kill enemies and hover over their drops to collect gear.</div>';
+    return;
+  }
+  grid.innerHTML = state.inventory.map(item => {
+    const isEquipped = state.equipped[item.slot] === item.id;
+    return `
+      <div class="inv-cell rarity-${item.rarity} ${item.id === selectedItemId ? 'selected' : ''} ${isEquipped ? 'equipped' : ''}" data-item-id="${item.id}" title="${escapeHtml(item.name)}">
+        ${item.locked ? '<div class="inv-cell-lock">&#128274;</div>' : ''}
+        ${SLOT_ABBR[item.slot]}
+        <div class="inv-cell-lvl">Lv${item.level || 1}</div>
+      </div>`;
+  }).join('');
+
+  grid.querySelectorAll('.inv-cell').forEach(cell => {
+    cell.addEventListener('click', e => {
+      const id   = cell.dataset.itemId;
+      const item = state.inventory.find(i => i.id === id);
+      if (!item) return;
+      if (e.shiftKey) {
+        item.locked = !item.locked;
+        renderInvGrid();
+        return;
+      }
+      selectedItemId = id;
+      renderEquipDetail();
+      renderInvGrid();
+    });
+  });
+}
+
+function renderEquipDetail() {
+  const detail = document.getElementById('equip-detail');
+  const item = state.inventory.find(i => i.id === selectedItemId);
+  if (!item) {
+    detail.innerHTML = '<div class="equip-detail-empty">Select an item to view details</div>';
+    return;
+  }
+  const isEquipped  = state.equipped[item.slot] === item.id;
+  const effectsLine = itemEffectsLine(item);
+  detail.innerHTML = `
+    <div class="item-name rarity-${item.rarity}">${escapeHtml(item.name)} ${item.locked ? '&#128274;' : ''}</div>
+    <div class="item-stats">${itemStatsLine(item)} &nbsp;(Lv${item.level || 1})</div>
+    ${effectsLine ? `<div class="item-effects">${escapeHtml(effectsLine)}</div>` : ''}
+    <div class="item-actions">
+      <button class="item-btn equip-btn ${isEquipped ? 'equipped' : ''}" id="detail-equip-btn">${isEquipped ? 'Unequip' : 'Equip'}</button>
+      ${isEquipped ? '' : `<button class="item-btn" id="detail-salvage-btn">Salvage</button>`}
+    </div>
+  `;
+  const equipBtn = document.getElementById('detail-equip-btn');
+  if (equipBtn) equipBtn.addEventListener('click', () => {
+    ensureAudio();
+    if (isEquipped) {
+      state.equipped[item.slot] = null;
+    } else {
+      state.equipped[item.slot] = item.id;
+      sfx.equip();
+    }
+    recalcPlayerStats();
+    renderEquipModal();
+  });
+  const salvageBtn = document.getElementById('detail-salvage-btn');
+  if (salvageBtn) salvageBtn.addEventListener('click', () => {
+    ensureAudio();
+    salvageItem(item.id);
+    selectedItemId = null;
+    renderEquipModal();
+  });
+}
+
+document.getElementById('equip-close-btn').addEventListener('click', closeEquipModal);
+document.getElementById('reopen-equip-btn').addEventListener('click', openEquipModal);
+document.getElementById('equip-modal').addEventListener('click', e => {
+  if (e.target.id === 'equip-modal') closeEquipModal();
+});
+document.getElementById('btn-sort').addEventListener('click', () => {
+  ensureAudio();
+  sortInventory();
+  renderInvGrid();
+});
+document.getElementById('btn-combine').addEventListener('click', () => {
+  ensureAudio();
+  if (combineAll()) renderEquipModal();
+});
+document.getElementById('btn-recycle').addEventListener('click', () => {
+  ensureAudio();
+  if (recycleAll() > 0) { selectedItemId = null; renderEquipModal(); }
+});
+
 // ═══════════════════════════════════════════════════════════
 //  TAB SWITCHING
 // ═══════════════════════════════════════════════════════════
-const TAB_IDS = ['stats', 'upgrades', 'offline', 'account'];
+const TAB_IDS = ['stats', 'upgrades', 'offline', 'account', 'equipment'];
 document.getElementById('dock-tabs').addEventListener('click', e => {
   const btn = e.target.closest('.tab-btn');
   if (!btn) return;
@@ -1428,9 +2218,10 @@ document.getElementById('dock-tabs').addEventListener('click', e => {
   TAB_IDS.forEach(id => {
     document.getElementById(`panel-${id}`).style.display = id === tab ? '' : 'none';
   });
-  if (tab === 'upgrades') buildUpgradePanel();
-  if (tab === 'offline')  buildOfflinePanel();
-  if (tab === 'account')  buildAccountPanel();
+  if (tab === 'upgrades')  buildUpgradePanel();
+  if (tab === 'offline')   buildOfflinePanel();
+  if (tab === 'account')   buildAccountPanel();
+  if (tab === 'equipment') openEquipModal();
 });
 
 // ═══════════════════════════════════════════════════════════
@@ -1475,12 +2266,49 @@ canvas.addEventListener('touchmove', e => {
 canvas.addEventListener('touchend',    deactivateCursor);
 canvas.addEventListener('touchcancel', deactivateCursor);
 
+function currentWeaponDamage() {
+  const weapon = getEquippedItem('weapon');
+  return CFG.BASE_TICK_DMG + (weapon ? effectiveStats(weapon).dmg : 0);
+}
+
+function strikeLightning(sourceEnemy, dmgDealt, magnitude) {
+  let nearest = null, nearestDist = Infinity;
+  for (const e of pool) {
+    if (!e.alive || e === sourceEnemy) continue;
+    const dx = e.x - sourceEnemy.x, dy = e.y - sourceEnemy.y;
+    const d2 = dx * dx + dy * dy;
+    if (d2 < nearestDist && d2 < 14400) { nearestDist = d2; nearest = e; }
+  }
+  if (!nearest) return;
+  applyDmg(nearest, dmgDealt * magnitude);
+  sfx.lightning();
+  burst((sourceEnemy.x + nearest.x) / 2, (sourceEnemy.y + nearest.y) / 2, '#aaffff', 4);
+}
+
+function applyWeaponEffects(e, weapon, dmgDealt) {
+  if (!weapon) return;
+  for (const eff of weapon.effects) {
+    if (eff.type === 'lifesteal') {
+      state.playerHp = Math.min(player.maxHp, state.playerHp + dmgDealt * eff.magnitude);
+    } else if (eff.type === 'fire') {
+      e.burnDmgPerTick = dmgDealt * eff.magnitude;
+      e.burnTicksLeft  = 3000;
+    } else if (eff.type === 'lightning') {
+      strikeLightning(e, dmgDealt, eff.magnitude);
+    }
+  }
+}
+
 function turretDamage() {
-  const half = squareHalf(state.upgrades.aoe_radius || 0);
-  const dmg  = tickDmg(state.upgrades.tick_damage || 0);
+  const half   = squareHalf(state.upgrades.aoe_radius || 0);
+  const dmg    = currentWeaponDamage();
+  const weapon = getEquippedItem('weapon');
   for (const e of pool) {
     if (!e.alive) continue;
-    if (Math.abs(e.x - cursor.x) <= half && Math.abs(e.y - cursor.y) <= half) applyDmg(e, dmg);
+    if (Math.abs(e.x - cursor.x) <= half && Math.abs(e.y - cursor.y) <= half) {
+      applyDmg(e, dmg);
+      applyWeaponEffects(e, weapon, dmg);
+    }
   }
   squareFlash = 4;
 }
@@ -1533,10 +2361,9 @@ function fmt(n) {
 console.table(Array.from({ length: 60 }, (_, i) => {
   const s        = i + 1;
   const lvl      = state.upgrades.click_power || 0;
-  const dlvl     = state.upgrades.tick_damage || 0;
   const hp       = enemyHp(s);
   const interval = tickIntervalMs(lvl);
-  const dmg      = tickDmg(dlvl);
+  const dmg      = currentWeaponDamage();
   return { stage: s, enemyHP: hp.toFixed(1), tickIntervalMs: interval.toFixed(0), ticksToKill: Math.ceil(hp / dmg) };
 }));
 
@@ -1554,7 +2381,9 @@ function loop(ts) {
   updateParticles();
   updateFloaters();
   tickAuto(dt);
+  tickBurns(dt);
   tickTurret(dt);
+  updatePickups();
 
   // --- Render ---
   ctx.save();
@@ -1565,7 +2394,9 @@ function loop(ts) {
   }
   ctx.clearRect(-10, -10, W+20, H+20);
   drawBg();
+  drawPlayer();
   drawEntities();
+  drawPickups();
   drawParticles();
   drawFloaters();
   drawCursorSquare();
@@ -1579,6 +2410,10 @@ function loop(ts) {
 // ═══════════════════════════════════════════════════════════
 //  BOOT
 // ═══════════════════════════════════════════════════════════
+recalcPlayerStats();
+if (state.playerHp == null) state.playerHp = player.maxHp;
+state.playerHp = Math.min(state.playerHp, player.maxHp);
+
 calcOffline();
 refreshStats();
 buildUpgradePanel();
@@ -1589,6 +2424,15 @@ buildAccountPanel();
 for (let i = 0; i < 22; i++) spawnEnemy('common');
 
 requestAnimationFrame(ts => { lastTs = ts; loop(ts); });
+
+// Headless-verification hook only — not part of normal gameplay.
+window.__debug = {
+  state, pool, player, cursor,
+  getW: () => W, getH: () => H,
+  generateItem, addItemToInventory, spawnPickup, rollDrop,
+  recalcPlayerStats, applyPlayerDamage, combineAll, sortInventory,
+  recycleAll, killEnemy,
+};
 </script>
 </body>
 </html>
