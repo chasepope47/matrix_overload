@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="sporeGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#99ffdd"/>
+      <stop offset="60%" stop-color="#00ff99"/>
+      <stop offset="100%" stop-color="#004422"/>
+    </radialGradient>
+    <radialGradient id="coreGrad" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#ccffee"/>
+      <stop offset="40%" stop-color="#00ff99"/>
+      <stop offset="100%" stop-color="#001a0c"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 5-arm fungal body (star arrangement) -->
+  <!-- Arm 1 - top -->
+  <ellipse cx="100" cy="46" rx="14" ry="40" fill="#0a2018" stroke="#00ff99" stroke-width="2"
+           filter="url(#glow)" transform="rotate(0,100,100)"/>
+  <!-- Arm 2 - upper right -->
+  <ellipse cx="100" cy="46" rx="14" ry="40" fill="#0a2018" stroke="#00ff99" stroke-width="2"
+           filter="url(#glow)" transform="rotate(72,100,100)"/>
+  <!-- Arm 3 - lower right -->
+  <ellipse cx="100" cy="46" rx="14" ry="40" fill="#0a2018" stroke="#00ff99" stroke-width="2"
+           filter="url(#glow)" transform="rotate(144,100,100)"/>
+  <!-- Arm 4 - lower left -->
+  <ellipse cx="100" cy="46" rx="14" ry="40" fill="#0a2018" stroke="#00ff99" stroke-width="2"
+           filter="url(#glow)" transform="rotate(216,100,100)"/>
+  <!-- Arm 5 - upper left -->
+  <ellipse cx="100" cy="46" rx="14" ry="40" fill="#0a2018" stroke="#00ff99" stroke-width="2"
+           filter="url(#glow)" transform="rotate(288,100,100)"/>
+
+  <!-- Spore pods at arm tips -->
+  <circle cx="100" cy="11"  r="9" fill="url(#sporeGrad)" filter="url(#glow)"/>
+  <circle cx="174" cy="54"  r="9" fill="url(#sporeGrad)" filter="url(#glow)"/>
+  <circle cx="147" cy="162" r="9" fill="url(#sporeGrad)" filter="url(#glow)"/>
+  <circle cx="53"  cy="162" r="9" fill="url(#sporeGrad)" filter="url(#glow)"/>
+  <circle cx="26"  cy="54"  r="9" fill="url(#sporeGrad)" filter="url(#glow)"/>
+
+  <!-- Spore dots floating around tips -->
+  <circle cx="100" cy="4"   r="3" fill="#99ffdd" opacity="0.7"/>
+  <circle cx="178" cy="46"  r="3" fill="#99ffdd" opacity="0.7"/>
+  <circle cx="154" cy="170" r="3" fill="#99ffdd" opacity="0.7"/>
+  <circle cx="48"  cy="170" r="3" fill="#99ffdd" opacity="0.7"/>
+  <circle cx="22"  cy="46"  r="3" fill="#99ffdd" opacity="0.7"/>
+
+  <!-- Veins along arms -->
+  <line x1="100" y1="62"  x2="100" y2="16"  stroke="#00ff99" stroke-width="1" opacity="0.5"/>
+  <line x1="118" y1="72"  x2="170" y2="58"  stroke="#00ff99" stroke-width="1" opacity="0.5"/>
+  <line x1="112" y1="118" x2="148" y2="158" stroke="#00ff99" stroke-width="1" opacity="0.5"/>
+  <line x1="88"  y1="118" x2="52"  y2="158" stroke="#00ff99" stroke-width="1" opacity="0.5"/>
+  <line x1="82"  y1="72"  x2="30"  y2="58"  stroke="#00ff99" stroke-width="1" opacity="0.5"/>
+
+  <!-- Central fungal cap / body -->
+  <circle cx="100" cy="100" r="38" fill="#091808" stroke="#00ff99" stroke-width="2.5"
+          filter="url(#glow)"/>
+  <!-- Gill rings -->
+  <circle cx="100" cy="100" r="30" fill="none" stroke="#006633" stroke-width="1.5" opacity="0.7"/>
+  <circle cx="100" cy="100" r="20" fill="none" stroke="#008844" stroke-width="1.5" opacity="0.7"/>
+
+  <!-- Core bloom -->
+  <circle cx="100" cy="100" r="16" fill="url(#coreGrad)" filter="url(#glow)"/>
+  <!-- Three eyes in triangle -->
+  <circle cx="100" cy="90"  r="5" fill="#001a0c"/>
+  <circle cx="92"  cy="108" r="5" fill="#001a0c"/>
+  <circle cx="108" cy="108" r="5" fill="#001a0c"/>
+  <circle cx="100" cy="90"  r="2.5" fill="#00ff99" filter="url(#glow)"/>
+  <circle cx="92"  cy="108" r="2.5" fill="#00ff99" filter="url(#glow)"/>
+  <circle cx="108" cy="108" r="2.5" fill="#00ff99" filter="url(#glow)"/>
+</svg>

@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <linearGradient id="platingV" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#5a3a00"/>
+      <stop offset="50%" stop-color="#3a2200"/>
+      <stop offset="100%" stop-color="#1a1000"/>
+    </linearGradient>
+    <linearGradient id="platingH" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4a3000"/>
+      <stop offset="50%" stop-color="#3a2200"/>
+      <stop offset="100%" stop-color="#4a3000"/>
+    </linearGradient>
+    <radialGradient id="lensGrad" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#ffe08a"/>
+      <stop offset="60%" stop-color="#ffaa00"/>
+      <stop offset="100%" stop-color="#884400"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Vertical arm (cross beam) -->
+  <rect x="80" y="10" width="40" height="180" rx="4" fill="url(#platingV)"
+        stroke="#ffaa00" stroke-width="2" filter="url(#glow)"/>
+  <!-- Vertical arm panel lines -->
+  <line x1="90" y1="10"  x2="90" y2="190" stroke="#663300" stroke-width="1" opacity="0.6"/>
+  <line x1="110" y1="10" x2="110" y2="190" stroke="#663300" stroke-width="1" opacity="0.6"/>
+  <rect x="82" y="30"  width="36" height="8" rx="2" fill="#552200" opacity="0.8"/>
+  <rect x="82" y="80"  width="36" height="8" rx="2" fill="#552200" opacity="0.8"/>
+  <rect x="82" y="112" width="36" height="8" rx="2" fill="#552200" opacity="0.8"/>
+  <rect x="82" y="162" width="36" height="8" rx="2" fill="#552200" opacity="0.8"/>
+
+  <!-- Horizontal arm (cross beam) -->
+  <rect x="10" y="80" width="180" height="40" rx="4" fill="url(#platingH)"
+        stroke="#ffaa00" stroke-width="2" filter="url(#glow)"/>
+  <!-- Horizontal arm panel lines -->
+  <line x1="10" y1="90"  x2="190" y2="90"  stroke="#663300" stroke-width="1" opacity="0.6"/>
+  <line x1="10" y1="110" x2="190" y2="110" stroke="#663300" stroke-width="1" opacity="0.6"/>
+  <rect x="18"  y="82" width="18" height="36" rx="2" fill="#552200" opacity="0.8"/>
+  <rect x="164" y="82" width="18" height="36" rx="2" fill="#552200" opacity="0.8"/>
+
+  <!-- Arm tips - weapon emitters -->
+  <rect x="10"  y="84" width="12" height="32" rx="3" fill="#ffaa00" filter="url(#glow)"/>
+  <rect x="178" y="84" width="12" height="32" rx="3" fill="#ffaa00" filter="url(#glow)"/>
+  <rect x="84"  y="10" width="32" height="12" rx="3" fill="#ffaa00" filter="url(#glow)"/>
+  <rect x="84"  y="178" width="32" height="12" rx="3" fill="#ffaa00" filter="url(#glow)"/>
+
+  <!-- Central armoured body -->
+  <rect x="70" y="70" width="60" height="60" rx="6" fill="#3a2800"
+        stroke="#ffaa00" stroke-width="2.5" filter="url(#glow)"/>
+  <rect x="74" y="74" width="52" height="52" rx="4" fill="#2a1a00" stroke="#cc8800" stroke-width="1"/>
+
+  <!-- Dual sensor eyes -->
+  <circle cx="88"  cy="96" r="10" fill="#1a1000" stroke="#ffaa00" stroke-width="2"/>
+  <circle cx="112" cy="96" r="10" fill="#1a1000" stroke="#ffaa00" stroke-width="2"/>
+  <circle cx="88"  cy="96" r="6"  fill="url(#lensGrad)" filter="url(#glow)"/>
+  <circle cx="112" cy="96" r="6"  fill="url(#lensGrad)" filter="url(#glow)"/>
+  <circle cx="86"  cy="94" r="2"  fill="#ffffff" opacity="0.7"/>
+  <circle cx="110" cy="94" r="2"  fill="#ffffff" opacity="0.7"/>
+
+  <!-- Mouth / vent grille -->
+  <rect x="82" y="112" width="36" height="10" rx="2" fill="#1a1000" stroke="#886600" stroke-width="1"/>
+  <line x1="88"  y1="113" x2="88"  y2="121" stroke="#ffaa00" stroke-width="1" opacity="0.8"/>
+  <line x1="94"  y1="113" x2="94"  y2="121" stroke="#ffaa00" stroke-width="1" opacity="0.8"/>
+  <line x1="100" y1="113" x2="100" y2="121" stroke="#ffaa00" stroke-width="1" opacity="0.8"/>
+  <line x1="106" y1="113" x2="106" y2="121" stroke="#ffaa00" stroke-width="1" opacity="0.8"/>
+  <line x1="112" y1="113" x2="112" y2="121" stroke="#ffaa00" stroke-width="1" opacity="0.8"/>
+
+  <!-- Corner bolts on body -->
+  <circle cx="74"  cy="74"  r="3" fill="#ffaa00"/>
+  <circle cx="126" cy="74"  r="3" fill="#ffaa00"/>
+  <circle cx="74"  cy="126" r="3" fill="#ffaa00"/>
+  <circle cx="126" cy="126" r="3" fill="#ffaa00"/>
+</svg>

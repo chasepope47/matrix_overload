@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="bodyGrad" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#3a3a3a"/>
+      <stop offset="60%" stop-color="#141414"/>
+      <stop offset="100%" stop-color="#060606"/>
+    </radialGradient>
+    <radialGradient id="eyeGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="40%" stop-color="#cccccc"/>
+      <stop offset="100%" stop-color="#666666"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Long thin appendages (predator limbs) -->
+  <path d="M100,44 Q72,54 48,36 Q40,28 52,32 Q72,46 96,60"
+        stroke="#aaaaaa" stroke-width="3" fill="none" opacity="0.7"/>
+  <path d="M100,44 Q128,54 152,36 Q160,28 148,32 Q128,46 104,60"
+        stroke="#aaaaaa" stroke-width="3" fill="none" opacity="0.7"/>
+  <path d="M78,80 Q48,72 26,56 Q18,48 30,50 Q52,64 80,88"
+        stroke="#aaaaaa" stroke-width="2.5" fill="none" opacity="0.6"/>
+  <path d="M122,80 Q152,72 174,56 Q182,48 170,50 Q148,64 120,88"
+        stroke="#aaaaaa" stroke-width="2.5" fill="none" opacity="0.6"/>
+  <path d="M78,120 Q48,128 24,146 Q16,154 28,152 Q52,136 80,112"
+        stroke="#aaaaaa" stroke-width="2.5" fill="none" opacity="0.6"/>
+  <path d="M122,120 Q152,128 176,146 Q184,154 172,152 Q148,136 120,112"
+        stroke="#aaaaaa" stroke-width="2.5" fill="none" opacity="0.6"/>
+  <path d="M100,156 Q72,146 48,164 Q40,172 52,168 Q72,154 96,140"
+        stroke="#aaaaaa" stroke-width="3" fill="none" opacity="0.7"/>
+  <path d="M100,156 Q128,146 152,164 Q160,172 148,168 Q128,154 104,140"
+        stroke="#aaaaaa" stroke-width="3" fill="none" opacity="0.7"/>
+
+  <!-- Diamond body -->
+  <polygon points="100,10 168,100 100,190 32,100"
+           fill="url(#bodyGrad)" stroke="#aaaaaa" stroke-width="2" filter="url(#glow)"/>
+
+  <!-- Texture segments -->
+  <line x1="100" y1="10"  x2="100" y2="190" stroke="#333333" stroke-width="1" opacity="0.5"/>
+  <line x1="32"  y1="100" x2="168" y2="100" stroke="#333333" stroke-width="1" opacity="0.5"/>
+  <line x1="100" y1="10"  x2="168" y2="100" stroke="#2a2a2a" stroke-width="1" opacity="0.4"/>
+  <line x1="100" y1="10"  x2="32"  y2="100" stroke="#2a2a2a" stroke-width="1" opacity="0.4"/>
+  <line x1="100" y1="190" x2="168" y2="100" stroke="#2a2a2a" stroke-width="1" opacity="0.4"/>
+  <line x1="100" y1="190" x2="32"  y2="100" stroke="#2a2a2a" stroke-width="1" opacity="0.4"/>
+
+  <!-- 5 eyes vertically arranged (all different sizes, unnerving) -->
+  <circle cx="100" cy="58"  r="9"  fill="#060606" stroke="#eeeeee" stroke-width="1.5"/>
+  <circle cx="100" cy="58"  r="5"  fill="url(#eyeGrad)" filter="url(#glow)"/>
+  <circle cx="100" cy="58"  r="2"  fill="#000000"/>
+
+  <circle cx="100" cy="82"  r="6"  fill="#060606" stroke="#aaaaaa" stroke-width="1.5"/>
+  <circle cx="100" cy="82"  r="3.5" fill="url(#eyeGrad)" filter="url(#glow)"/>
+  <circle cx="100" cy="82"  r="1.5" fill="#000000"/>
+
+  <circle cx="100" cy="100" r="12" fill="#060606" stroke="#eeeeee" stroke-width="2"/>
+  <circle cx="100" cy="100" r="7"  fill="url(#eyeGrad)" filter="url(#glow)"/>
+  <circle cx="100" cy="100" r="3"  fill="#000000"/>
+  <circle cx="96"  cy="96"  r="2"  fill="#ffffff" opacity="0.6"/>
+
+  <circle cx="100" cy="118" r="6"  fill="#060606" stroke="#aaaaaa" stroke-width="1.5"/>
+  <circle cx="100" cy="118" r="3.5" fill="url(#eyeGrad)" filter="url(#glow)"/>
+  <circle cx="100" cy="118" r="1.5" fill="#000000"/>
+
+  <circle cx="100" cy="142" r="9"  fill="#060606" stroke="#eeeeee" stroke-width="1.5"/>
+  <circle cx="100" cy="142" r="5"  fill="url(#eyeGrad)" filter="url(#glow)"/>
+  <circle cx="100" cy="142" r="2"  fill="#000000"/>
+
+  <!-- Tip glows -->
+  <circle cx="100" cy="14"  r="4" fill="#cccccc" filter="url(#glow)" opacity="0.6"/>
+  <circle cx="164" cy="100" r="4" fill="#cccccc" filter="url(#glow)" opacity="0.6"/>
+  <circle cx="100" cy="186" r="4" fill="#cccccc" filter="url(#glow)" opacity="0.6"/>
+  <circle cx="36"  cy="100" r="4" fill="#cccccc" filter="url(#glow)" opacity="0.6"/>
+</svg>

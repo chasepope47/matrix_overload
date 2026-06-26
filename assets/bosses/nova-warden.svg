@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="coreGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f3b6ff"/>
+      <stop offset="50%" stop-color="#b13cff"/>
+      <stop offset="100%" stop-color="#180824"/>
+    </radialGradient>
+    <linearGradient id="crystalFace" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e0a0ff" stop-opacity="0.9"/>
+      <stop offset="50%" stop-color="#7020b0" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#2a0440" stop-opacity="0.9"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer crystal shell — diamond -->
+  <polygon points="100,8 190,100 100,192 10,100"
+           fill="#100020" stroke="#b13cff" stroke-width="2.5" filter="url(#glow)"/>
+
+  <!-- Crystal facet planes -->
+  <polygon points="100,8 190,100 100,100"  fill="url(#crystalFace)" opacity="0.55"/>
+  <polygon points="100,8 10,100  100,100"  fill="#3010608" opacity="0.35"/>
+  <polygon points="100,192 190,100 100,100" fill="#200830" opacity="0.6"/>
+  <polygon points="100,192 10,100  100,100" fill="url(#crystalFace)" opacity="0.4"/>
+
+  <!-- Crystal facet edge lines -->
+  <line x1="100" y1="8"   x2="100" y2="192" stroke="#d97bff" stroke-width="1" opacity="0.5"/>
+  <line x1="10"  y1="100" x2="190" y2="100" stroke="#d97bff" stroke-width="1" opacity="0.5"/>
+  <line x1="100" y1="8"   x2="55"  y2="55"  stroke="#d97bff" stroke-width="1" opacity="0.4"/>
+  <line x1="100" y1="8"   x2="145" y2="55"  stroke="#d97bff" stroke-width="1" opacity="0.4"/>
+  <line x1="100" y1="192" x2="55"  y2="145" stroke="#d97bff" stroke-width="1" opacity="0.4"/>
+  <line x1="100" y1="192" x2="145" y2="145" stroke="#d97bff" stroke-width="1" opacity="0.4"/>
+
+  <!-- Inner organic membrane (the creature inside) -->
+  <ellipse cx="100" cy="100" rx="40" ry="44" fill="#1a0430"
+           stroke="#b13cff" stroke-width="1.5" opacity="0.9"/>
+
+  <!-- Organic tendrils pressing against crystal -->
+  <path d="M100,56 Q92,72 88,100 Q92,128 100,144" stroke="#b13cff" stroke-width="2" fill="none" opacity="0.7"/>
+  <path d="M60,100 Q76,92 100,88 Q124,92 140,100"  stroke="#b13cff" stroke-width="2" fill="none" opacity="0.7"/>
+  <path d="M70,70  Q82,84 100,88"  stroke="#8820cc" stroke-width="1.5" fill="none" opacity="0.6"/>
+  <path d="M130,70  Q118,84 100,88" stroke="#8820cc" stroke-width="1.5" fill="none" opacity="0.6"/>
+
+  <!-- Pulsing core (the creature's eye) -->
+  <circle cx="100" cy="100" r="26" fill="url(#coreGrad)" filter="url(#glow)"/>
+  <ellipse cx="100" cy="100" rx="14" ry="18" fill="#0a0018"/>
+  <!-- Slit pupil -->
+  <ellipse cx="100" cy="100" rx="4" ry="12" fill="#b13cff" filter="url(#glow)"/>
+  <!-- Eye glints -->
+  <circle cx="93" cy="92" r="3" fill="#f3b6ff" opacity="0.8"/>
+  <circle cx="107" cy="108" r="2" fill="#f3b6ff" opacity="0.5"/>
+
+  <!-- Crystal tip glows -->
+  <circle cx="100" cy="12"  r="5" fill="#d97bff" filter="url(#glow)"/>
+  <circle cx="186" cy="100" r="5" fill="#d97bff" filter="url(#glow)"/>
+  <circle cx="100" cy="188" r="5" fill="#d97bff" filter="url(#glow)"/>
+  <circle cx="14"  cy="100" r="5" fill="#d97bff" filter="url(#glow)"/>
+</svg>

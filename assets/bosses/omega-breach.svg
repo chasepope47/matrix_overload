@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="riftGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffcc99"/>
+      <stop offset="45%" stop-color="#ff6600"/>
+      <stop offset="100%" stop-color="#0f0000"/>
+    </radialGradient>
+    <linearGradient id="mechArm" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3a2010"/>
+      <stop offset="100%" stop-color="#1a0c00"/>
+    </linearGradient>
+    <linearGradient id="organicArm" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2a1400"/>
+      <stop offset="100%" stop-color="#150a00"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Cross shape — vertical beam (mechanical) -->
+  <rect x="82" y="8" width="36" height="184" rx="4"
+        fill="url(#mechArm)" stroke="#ff6600" stroke-width="2.5" filter="url(#glow)"/>
+  <!-- Mechanical rivet lines on vertical -->
+  <line x1="92"  y1="8"   x2="92"  y2="192" stroke="#553300" stroke-width="1" opacity="0.6"/>
+  <line x1="108" y1="8"   x2="108" y2="192" stroke="#553300" stroke-width="1" opacity="0.6"/>
+  <rect x="84"  y="28"  width="32" height="10" rx="2" fill="#441800" opacity="0.9"/>
+  <rect x="84"  y="56"  width="32" height="10" rx="2" fill="#441800" opacity="0.9"/>
+  <rect x="84"  y="134" width="32" height="10" rx="2" fill="#441800" opacity="0.9"/>
+  <rect x="84"  y="162" width="32" height="10" rx="2" fill="#441800" opacity="0.9"/>
+
+  <!-- Cross shape — horizontal beam (organic, pulsing flesh/vines) -->
+  <rect x="8" y="82" width="184" height="36" rx="4"
+        fill="url(#organicArm)" stroke="#ff6600" stroke-width="2.5" filter="url(#glow)"/>
+  <!-- Organic vein lines on horizontal -->
+  <path d="M8,92  Q50,88  100,92 Q150,96 192,92"  stroke="#883300" stroke-width="1.5" fill="none" opacity="0.6"/>
+  <path d="M8,108 Q50,112 100,108 Q150,104 192,108" stroke="#883300" stroke-width="1.5" fill="none" opacity="0.6"/>
+  <!-- Organic nodes/barbs -->
+  <ellipse cx="36"  cy="100" rx="8" ry="5" fill="#331400" stroke="#ff6600" stroke-width="1"/>
+  <ellipse cx="66"  cy="100" rx="8" ry="5" fill="#331400" stroke="#ff6600" stroke-width="1"/>
+  <ellipse cx="134" cy="100" rx="8" ry="5" fill="#331400" stroke="#ff6600" stroke-width="1"/>
+  <ellipse cx="164" cy="100" rx="8" ry="5" fill="#331400" stroke="#ff6600" stroke-width="1"/>
+
+  <!-- Arm tips — mechanical emitters -->
+  <rect x="84"  y="8"   width="32" height="16" rx="3" fill="#ff6600" filter="url(#glow)"/>
+  <rect x="84"  y="176" width="32" height="16" rx="3" fill="#ff6600" filter="url(#glow)"/>
+  <!-- Arm tips — organic mouths -->
+  <ellipse cx="18"  cy="100" rx="10" ry="14" fill="#220800" stroke="#ff6600" stroke-width="2" filter="url(#glow)"/>
+  <ellipse cx="182" cy="100" rx="10" ry="14" fill="#220800" stroke="#ff6600" stroke-width="2" filter="url(#glow)"/>
+  <!-- Teeth on organic mouths -->
+  <path d="M11,93 L14,100 L11,107 M25,93 L22,100 L25,107" stroke="#ffcc99" stroke-width="1.5" fill="none"/>
+  <path d="M175,93 L178,100 L175,107 M189,93 L186,100 L189,107" stroke="#ffcc99" stroke-width="1.5" fill="none"/>
+
+  <!-- Reality breach core — the meeting point -->
+  <circle cx="100" cy="100" r="44" fill="#0f0000" stroke="#ff6600" stroke-width="3"
+          filter="url(#glow)"/>
+  <!-- Rift tear lines -->
+  <path d="M78,78 L100,100 L122,78" stroke="#ff6600" stroke-width="2" fill="none" filter="url(#glow)"/>
+  <path d="M78,122 L100,100 L122,122" stroke="#ff6600" stroke-width="2" fill="none" filter="url(#glow)"/>
+  <path d="M76,100 L100,100 L76,86 M124,100 L100,100 L124,114"
+        stroke="#ff8833" stroke-width="1.5" fill="none" opacity="0.6"/>
+
+  <!-- Core rift opening -->
+  <circle cx="100" cy="100" r="28" fill="url(#riftGrad)" filter="url(#glow)"/>
+  <!-- Inner void -->
+  <ellipse cx="100" cy="100" rx="12" ry="16" fill="#050000"/>
+  <!-- Eye of the breach -->
+  <ellipse cx="100" cy="100" rx="5" ry="8" fill="#ff6600" filter="url(#glow)"/>
+  <circle  cx="96"  cy="95"  r="3"  fill="#ffcc99" opacity="0.8"/>
+</svg>
