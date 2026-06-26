@@ -11,6 +11,7 @@ import { applyDmg, tickAuto } from './combat.js';
 import { refreshHUD, refreshStats, buildUpgradePanel,
          buildOfflinePanel, initTabs } from './ui.js';
 import { buildAccountPanel, updateAuthScreen, bindAuthScreen } from './cloud.js';
+import { loadBossImages } from './bosses.js';
 
 // ── Canvas ──
 G.canvas = document.getElementById('game-canvas');
@@ -97,6 +98,7 @@ function loop(ts) {
 }
 
 // ── Boot ──
+loadBossImages();
 calcOffline();
 refreshStats();
 buildUpgradePanel();
